@@ -97,6 +97,7 @@ fi
 #############################  NO KERNELSU  #######################################
 
 sed -i 's/CONFIG_KSU=y/# CONFIG_KSU is not set/' $COMPILEDIR_HAYDN/.config
+sed -i 's/CONFIG_KSU_NEXT=y/# CONFIG_KSU_NEXT is not set/' $COMPILEDIR_HAYDN/.config
 FILENAME="AGNi_kernel-$DEVICE-$AGNI_VERSION-$AGNI_BUILD_TYPE-NoKSU.zip"
 
 echo ""

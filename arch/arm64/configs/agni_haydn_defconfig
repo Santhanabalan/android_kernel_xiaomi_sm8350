@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.4.288 Kernel Configuration
+# Linux/arm64 5.4.290 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="clang version 18.0.0"
 CONFIG_GCC_VERSION=0
@@ -21,7 +21,7 @@ CONFIG_THREAD_INFO_IN_TASK=y
 #
 CONFIG_INIT_ENV_ARG_LIMIT=32
 # CONFIG_COMPILE_TEST is not set
-CONFIG_LOCALVERSION="-AGNi_haydn_AOSP_v7.5-stable-qgki"
+CONFIG_LOCALVERSION="-AGNi_haydn_AOSP_v7.6-stable-qgki"
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_BUILD_SALT=""
 CONFIG_DEFAULT_HOSTNAME="haydn"
@@ -6071,9 +6071,16 @@ CONFIG_INTERCONNECT_QCOM_QOS=y
 #
 # KernelSU
 #
-CONFIG_KSU=y
+# CONFIG_KSU is not set
 # CONFIG_KSU_DEBUG is not set
 # end of KernelSU
+
+#
+# KernelSU-NEXT
+#
+CONFIG_KSU_NEXT=y
+# CONFIG_KSU_ALLOWLIST_WORKAROUND is not set
+# end of KernelSU-NEXT
 
 CONFIG_OPLUS_FEATURE_CPUFREQ_BOUNCING=y
 # end of Device Drivers

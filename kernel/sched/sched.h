@@ -1612,13 +1612,9 @@ static inline void unregister_sched_domain_sysctl(void)
 }
 #endif
 
-extern int newidle_balance(struct rq *this_rq, struct rq_flags *rf);
-
 #else
 
 static inline void sched_ttwu_pending(void) { }
-
-static inline int newidle_balance(struct rq *this_rq, struct rq_flags *rf) { return 0; }
 
 #endif /* CONFIG_SMP */
 
@@ -2227,13 +2223,7 @@ static inline unsigned long capacity_orig_of(int cpu)
 	return cpu_rq(cpu)->cpu_capacity_orig;
 }
 
-static inline unsigned long task_util(struct task_struct *p)
-{
-#ifdef CONFIG_SCHED_WALT
-	return p->wts.demand_scaled;
-#endif
-	return READ_ONCE(p->se.avg.util_avg);
-}
+inline unsigned long task_util(struct task_struct *p);
 
 /**
  * Amount of capacity of a CPU that is (estimated to be) used by CFS tasks

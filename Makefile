@@ -485,7 +485,7 @@ KBUILD_CFLAGS   := -Wundef -Wno-strict-prototypes -Wno-trigraphs \
 		   -Werror=implicit-function-declaration -Wno-error=implicit-int \
 		   -Werror=return-type -Wno-format-security -Wno-unused-variable -Wno-unused-function \
 		   -std=gnu89 -Wno-misleading-indentation -Wno-pointer-to-int-cast -Wno-deprecated-declarations \
-		   -pipe
+		   -Wno-compare-distinct-pointer-types -pipe
 KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -823,6 +823,7 @@ KBUILD_CFLAGS += $(call cc-disable-warning, excess-initializers)
 KBUILD_CFLAGS += $(call cc-disable-warning, declaration-after-statement)
 KBUILD_CFLAGS += $(call cc-disable-warning, int-conversion)
 KBUILD_CFLAGS += $(call cc-disable-warning, strlcpy-strlcat-size)
+KBUILD_CFLAGS += $(call cc-disable-warning, distinct-pointer-types)
 KBUILD_CFLAGS += $(call cc-option, -Wno-undefined-optimized)
 KBUILD_CFLAGS += $(call cc-option, -Wno-tautological-constant-out-of-range-compare)
 KBUILD_CFLAGS += $(call cc-option, -mllvm -disable-struct-const-merge)

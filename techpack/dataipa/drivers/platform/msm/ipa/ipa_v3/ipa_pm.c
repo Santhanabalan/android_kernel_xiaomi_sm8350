@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/debugfs.h>
@@ -134,7 +135,7 @@ struct ipa_pm_client {
  * @clients: array to the clients with the handle as its index
  * @clients_by_pipe: array to the clients with endpoint as the index
  * @wq: work queue for deferred deactivate, activate, and clk_scaling work
- 8 @clk_scaling: pointer to clock scaling database
+ * @clk_scaling: pointer to clock scaling database
  * @client_mutex: global mutex to  lock the client arrays
  * @aggragated_tput: aggragated tput value of all valid activated clients
  * @group_tput: combined throughput for the groups
@@ -738,9 +739,9 @@ int ipa_pm_register(struct ipa_pm_register_params *params, u32 *hdl)
 	client->skip_clk_vote = params->skip_clk_vote;
 	client->wlock = wakeup_source_register(NULL, client->name);
 	if (!client->wlock) {
-		ipa_pm_deregister(*hdl);
 		IPA_PM_ERR("IPA wakeup source register failed %s\n",
 			client->name);
+		ipa_pm_deregister(*hdl);
 		return -ENOMEM;
 	}
 

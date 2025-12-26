@@ -60,6 +60,8 @@ ln -s ~/.cache/clang_thinlto-cache $COMPILEDIR_HAYDN/.thinlto-cache 2>/dev/null
 # 90Hz dtsi replacement
 sed -i 's/\/delete-node\/ timing@1/\/delete-node\/ timing@2/' $KERNELDIR/arch/arm64/boot/dts/vendor/qcom/display/lahaina-sde-display.dtsi
 
+export CCACHE_PREFIX=""
+export DISTCC_DIR="/tmp/.distcc"
 make O=$COMPILEDIR_HAYDN $CONFIG1
 make -j`nproc --ignore=2` O=$COMPILEDIR_HAYDN
 
@@ -113,6 +115,8 @@ rm -rf $KERNELDIR/$DIR
 mkdir -p $KERNELDIR/$DIR
 cd $KERNELDIR/
 
+export CCACHE_PREFIX=""
+export DISTCC_DIR="/tmp/.distcc"
 make -j`nproc --ignore=2` O=$COMPILEDIR_HAYDN
 
 rm $COMPILEDIR_HAYDN/.config $COMPILEDIR_HAYDN/.config.old 2>/dev/null

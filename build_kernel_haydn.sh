@@ -57,6 +57,8 @@ rm $COMPILEDIR_HAYDN/.config 2>/dev/null
 mkdir ~/.cache/clang_thinlto-cache 2>/dev/null
 ln -s ~/.cache/clang_thinlto-cache $COMPILEDIR_HAYDN/.thinlto-cache 2>/dev/null
 
+export CCACHE_PREFIX=""
+export DISTCC_DIR="/tmp/.distcc"
 make O=$COMPILEDIR_HAYDN $CONFIG1
 make -j`nproc --ignore=2` O=$COMPILEDIR_HAYDN
 
@@ -110,6 +112,8 @@ rm -rf $KERNELDIR/$DIR
 mkdir -p $KERNELDIR/$DIR
 cd $KERNELDIR/
 
+export CCACHE_PREFIX=""
+export DISTCC_DIR="/tmp/.distcc"
 make -j`nproc --ignore=2` O=$COMPILEDIR_HAYDN
 
 rm $COMPILEDIR_HAYDN/.config $COMPILEDIR_HAYDN/.config.old 2>/dev/null

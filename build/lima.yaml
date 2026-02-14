@@ -1,0 +1,132 @@
+# ============================================================================
+# lima.yaml — Lima VM for Bankai Kernel builds (all toolchains)
+#
+# Toolchains installed:
+#   • Upstream LLVM/Clang 20  (/usr/bin/clang-20, default on PATH) — native arm64
+#   • AOSP Clang r522817      (/opt/aosp-clang)   — x86_64 via Rosetta, +pgo +bolt +lto +mlgo
+#   • WeebX Clang 19.1.5      (/opt/weebx-clang)  — x86_64 via Rosetta
+#
+# Select at build time:
+#   bash build/lima-build.sh --clang=weebx      (default)
+#   bash build/lima-build.sh --clang=aosp
+#   bash build/lima-build.sh --clang=upstream
+#
+# VM lifecycle:
+#   limactl create --name=bankai build/lima.yaml
+#   limactl start bankai
+#   limactl delete bankai          # to recreate
+# ============================================================================
+
+arch: aarch64
+
+images:
+  - location: https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-arm64.img
+    arch: aarch64
+
+cpus: 10
+memory: 10GiB
+disk: 60GiB
+
+# Virtualization.framework — native aarch64 VM on Apple Silicon
+vmType: vz
+vmOpts:
+  vz:
+    rosetta:
+      enabled: true # translates x86_64 toolchain binaries seamlessly
+      binfmt: true
+
+# Mount kernel source tree writable — built in-place
+mounts:
+  - location: "~"
+    writable: false
+  - location: /Volumes/Kernel
+    writable: true
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux
+
+      export DEBIAN_FRONTEND=noninteractive
+
+      # ── Base build dependencies (install BEFORE adding amd64 arch) ───
+      apt-get update
+      apt-get install -y --no-install-recommends \
+        bc bison build-essential ca-certificates cpio curl flex \
+        git gnupg kmod libelf-dev libssl-dev lld llvm zip unzip \
+        python3 python-is-python3 wget rsync xz-utils zstd \
+        gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
+        software-properties-common lsb-release
+
+      # ── x86_64 multiarch (required for Rosetta to run x86_64 Clang) ──
+      dpkg --add-architecture amd64
+
+      CODENAME_MULTI=$(lsb_release -cs 2>/dev/null || echo jammy)
+      cat > /etc/apt/sources.list.d/amd64.list << EOF
+      deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME_MULTI} main restricted universe multiverse
+      deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME_MULTI}-updates main restricted universe multiverse
+      deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME_MULTI}-security main restricted universe multiverse
+      EOF
+      sed -i 's/^deb \(http:\/\/ports\)/deb [arch=arm64] \1/' /etc/apt/sources.list 2>/dev/null || true
+
+      apt-get update
+      apt-get install -y --no-install-recommends \
+        libc6:amd64 libstdc++6:amd64 zlib1g:amd64 libgcc-s1:amd64 libzstd1:amd64
+
+      # ────────────────────────────────────────────────────────────────
+      # Toolchain 1: Upstream LLVM/Clang 20 (native arm64)
+      # ────────────────────────────────────────────────────────────────
+      wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+      CODENAME=$(lsb_release -cs)
+      echo "deb http://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME}-20 main" \
+        > /etc/apt/sources.list.d/llvm-20.list
+
+      apt-get update
+      apt-get install -y --no-install-recommends \
+        clang-20 lld-20 llvm-20 llvm-20-dev
+
+      update-alternatives --install /usr/bin/clang       clang       /usr/bin/clang-20       100
+      update-alternatives --install /usr/bin/clang++     clang++     /usr/bin/clang++-20     100
+      update-alternatives --install /usr/bin/ld.lld      ld.lld      /usr/bin/ld.lld-20      100
+      update-alternatives --install /usr/bin/llvm-ar      llvm-ar      /usr/bin/llvm-ar-20      100
+      update-alternatives --install /usr/bin/llvm-nm      llvm-nm      /usr/bin/llvm-nm-20      100
+      update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/bin/llvm-objcopy-20 100
+      update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/bin/llvm-objdump-20 100
+      update-alternatives --install /usr/bin/llvm-strip   llvm-strip   /usr/bin/llvm-strip-20   100
+      update-alternatives --install /usr/bin/llvm-as      llvm-as      /usr/bin/llvm-as-20      100
+      update-alternatives --install /usr/bin/llvm-readelf llvm-readelf /usr/bin/llvm-readelf-20 100
+
+      # ────────────────────────────────────────────────────────────────
+      # Toolchain 2: AOSP Clang r522817 (x86_64, +pgo +bolt +lto +mlgo)
+      # ────────────────────────────────────────────────────────────────
+      AOSP_CLANG_VER="r522817"
+      AOSP_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-${AOSP_CLANG_VER}.tar.gz"
+      mkdir -p /opt/aosp-clang
+      echo "[*] Downloading AOSP Clang ${AOSP_CLANG_VER} …"
+      wget -q --show-progress "${AOSP_URL}" -O /tmp/aosp-clang.tar.gz
+      tar -xzf /tmp/aosp-clang.tar.gz -C /opt/aosp-clang
+      rm /tmp/aosp-clang.tar.gz
+
+      # ────────────────────────────────────────────────────────────────
+      # Toolchain 3: WeebX Clang 19.1.5 (x86_64)
+      # ────────────────────────────────────────────────────────────────
+      mkdir -p /opt/weebx-clang
+      echo "[*] Downloading WeebX Clang 19.1.5 …"
+      wget -q --show-progress \
+        "https://github.com/XSans0/WeebX-Clang/releases/download/WeebX-Clang-19.1.5-release/WeebX-Clang-19.1.5.tar.gz" \
+        -O /tmp/weebx-clang.tar.gz
+      tar -xzf /tmp/weebx-clang.tar.gz -C /opt/weebx-clang
+      rm /tmp/weebx-clang.tar.gz
+
+      # ── Verify ───────────────────────────────────────────────────────
+      clang --version
+      /opt/aosp-clang/bin/clang --version    || echo "[!] AOSP verify skipped"
+      /opt/weebx-clang/bin/clang --version   || echo "[!] WeebX verify skipped"
+      aarch64-linux-gnu-ld --version
+
+      echo "[✓] Bankai Lima VM provisioned — Upstream 20 + AOSP ${AOSP_CLANG_VER} + WeebX 19.1.5"
+
+containerd:
+  system: false
+  user: false

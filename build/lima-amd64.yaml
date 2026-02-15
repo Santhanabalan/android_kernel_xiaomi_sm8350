@@ -1,0 +1,44 @@
+# ============================================================================
+# lima-amd64.yaml — Lima x86_64 VM for Bankai Kernel builds
+#
+# Runs a native x86_64 Ubuntu VM via QEMU on Apple Silicon.
+# All x86_64 toolchains (AOSP Clang, WeebX Clang) run natively — no Rosetta.
+#
+# VM lifecycle:
+#   limactl create --name=bankai-amd64 build/lima-amd64.yaml
+#   limactl start bankai-amd64
+#   limactl delete bankai-amd64      # to recreate
+#
+# Build:
+#   bash build/lima-amd64-build.sh                # full build (default: aosp clang)
+#   bash build/lima-amd64-build.sh --clang=weebx  # WeebX Clang 19.1.5
+#   bash build/lima-amd64-build.sh --clang=aosp   # AOSP Clang r547379
+#   bash build/lima-amd64-build.sh --shell         # drop into VM shell
+# ============================================================================
+
+arch: x86_64
+
+images:
+  - location: https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
+    arch: x86_64
+
+cpus: 8
+memory: 8GiB
+disk: 40GiB
+
+# QEMU — emulates x86_64 on Apple Silicon
+vmType: qemu
+
+# Mount kernel source tree writable — build in-place
+mounts:
+  - location: "~"
+    writable: false
+  - location: /Volumes/Kernel
+    writable: true
+
+# Provision manually after VM is running:
+#   limactl shell bankai-amd64 sudo bash /Volumes/Kernel/kernel_xiaomi_sm8350/build/lima-amd64-provision.sh
+
+containerd:
+  system: false
+  user: false

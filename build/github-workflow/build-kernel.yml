@@ -1,0 +1,272 @@
+# ============================================================================
+# GitHub Actions workflow for Bankai Kernel (Xiaomi 11T Pro / vili / SM8350)
+#
+# Standalone workflow — this file lives in a SEPARATE repo from the kernel.
+# Place it at:  <your-ci-repo>/.github/workflows/build-kernel.yml
+#
+# It clones the kernel source from GitHub, builds it on a large Ubuntu
+# runner, and uploads the flashable AnyKernel3 zip as an artifact.
+# ============================================================================
+
+name: Build Bankai Kernel
+
+on:
+  # Trigger manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      kernel_branch:
+        description: "Kernel repo branch to build"
+        required: false
+        default: "lineage-23.2"
+        type: string
+      clang_variant:
+        description: "Clang toolchain to use"
+        required: false
+        default: "aosp"
+        type: choice
+        options:
+          - aosp
+          - weebx
+      variant:
+        description: "Kernel variant"
+        required: false
+        default: "qgki"
+        type: choice
+        options:
+          - qgki
+          - qgki-debug
+          - gki
+
+env:
+  KERNEL_REPO: Santhanabalan/android_kernel_xiaomi_sm8350
+  KERNEL_BRANCH: ${{ github.event.inputs.kernel_branch || 'lineage-23.2' }}
+  KERNEL_NAME: Bankai
+  DEVICE: vili
+  TARGET_PRODUCT: vili
+  PLATFORM: lahaina
+  ARCH: arm64
+  SUBARCH: arm64
+  AOSP_CLANG_VER: r547379
+  WEEBX_CLANG_VER: "19.1.5"
+  KBUILD_BUILD_USER: Santhanabalan
+  KBUILD_BUILD_HOST: GitHub-Actions
+
+jobs:
+  build:
+    name: Build Kernel (${{ github.event.inputs.clang_variant || 'aosp' }})
+    runs-on: ubuntu-latest-large
+    timeout-minutes: 120
+
+    steps:
+      # ── Clone kernel source ───────────────────────────────────────────────
+      - name: Clone kernel source
+        run: |
+          echo "::group::Cloning ${KERNEL_REPO} @ ${KERNEL_BRANCH}"
+          git clone --depth=1 --branch="${KERNEL_BRANCH}" --recurse-submodules \
+            "https://github.com/${KERNEL_REPO}.git" kernel
+          echo "::endgroup::"
+          echo "Cloned $(git -C kernel log --oneline -1)"
+
+      # ── Install build dependencies ────────────────────────────────────────
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential ca-certificates cpio curl \
+            flex git gnupg kmod libelf-dev libssl-dev lz4 \
+            python3 python-is-python3 zip unzip wget \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
+
+      # ── Determine toolchain ──────────────────────────────────────────────
+      - name: Set build variables
+        id: vars
+        run: |
+          CLANG_VARIANT="${{ github.event.inputs.clang_variant || 'aosp' }}"
+          VARIANT="${{ github.event.inputs.variant || 'qgki' }}"
+          echo "clang_variant=${CLANG_VARIANT}" >> "$GITHUB_OUTPUT"
+          echo "variant=${VARIANT}" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$(date +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
+
+          if [[ "${CLANG_VARIANT}" == "aosp" ]]; then
+            echo "clang_dir=${HOME}/toolchains/clang-${AOSP_CLANG_VER}" >> "$GITHUB_OUTPUT"
+            echo "clang_cache_key=aosp-clang-${AOSP_CLANG_VER}" >> "$GITHUB_OUTPUT"
+          else
+            echo "clang_dir=${HOME}/toolchains/weebx-clang-${WEEBX_CLANG_VER}" >> "$GITHUB_OUTPUT"
+            echo "clang_cache_key=weebx-clang-${WEEBX_CLANG_VER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Cache toolchain ──────────────────────────────────────────────────
+      - name: Cache Clang toolchain
+        id: cache-clang
+        uses: actions/cache@v4
+        with:
+          path: ~/toolchains
+          key: ${{ steps.vars.outputs.clang_cache_key }}
+
+      # ── Download toolchain (cache miss) ──────────────────────────────────
+      - name: Download Clang toolchain
+        if: steps.cache-clang.outputs.cache-hit != 'true'
+        run: |
+          CLANG_VARIANT="${{ steps.vars.outputs.clang_variant }}"
+          CLANG_DIR="${{ steps.vars.outputs.clang_dir }}"
+
+          mkdir -p "${CLANG_DIR}"
+
+          if [[ "${CLANG_VARIANT}" == "aosp" ]]; then
+            echo "::group::Downloading AOSP Clang ${AOSP_CLANG_VER}"
+            curl -fsSL \
+              "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-${AOSP_CLANG_VER}.tar.gz" \
+              | tar xz -C "${CLANG_DIR}"
+            echo "::endgroup::"
+          else
+            echo "::group::Downloading WeebX Clang ${WEEBX_CLANG_VER}"
+            wget -q --show-progress \
+              "https://github.com/XSans0/WeebX-Clang/releases/download/WeebX-Clang-${WEEBX_CLANG_VER}-release/WeebX-Clang-${WEEBX_CLANG_VER}.tar.gz" \
+              -O /tmp/weebx-clang.tar.gz
+            tar -xzf /tmp/weebx-clang.tar.gz -C "${CLANG_DIR}"
+            rm -f /tmp/weebx-clang.tar.gz
+            echo "::endgroup::"
+          fi
+
+      # ── Verify toolchain ─────────────────────────────────────────────────
+      - name: Verify toolchain
+        run: |
+          export PATH="${{ steps.vars.outputs.clang_dir }}/bin:${PATH}"
+          echo "Clang: $(clang --version | head -1)"
+          echo "aarch64-linux-gnu-ld: $(aarch64-linux-gnu-ld --version | head -1)"
+          echo "arm-linux-gnueabi-ld: $(arm-linux-gnueabi-ld --version | head -1)"
+
+      # ── Generate defconfig ───────────────────────────────────────────────
+      - name: Generate defconfig
+        working-directory: kernel
+        run: |
+          export PATH="${{ steps.vars.outputs.clang_dir }}/bin:${PATH}"
+          export ARCH="${ARCH}" SUBARCH="${SUBARCH}" TARGET_PRODUCT="${TARGET_PRODUCT}"
+
+          VARIANT="${{ steps.vars.outputs.variant }}"
+          DEFCONFIG="vendor/${PLATFORM}-${VARIANT}_defconfig"
+
+          echo "::group::Generating ${DEFCONFIG}"
+          # Clean stale kconfig tools
+          rm -f scripts/kconfig/conf scripts/kconfig/*.o scripts/basic/fixdep 2>/dev/null || true
+
+          bash scripts/gki/generate_defconfig.sh "${DEFCONFIG}"
+
+          make O=out ARCH=${ARCH} SUBARCH=${SUBARCH} \
+            LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
+            "${DEFCONFIG}"
+
+          make O=out ARCH=${ARCH} SUBARCH=${SUBARCH} \
+            LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
+            olddefconfig
+          echo "::endgroup::"
+
+      # ── Build kernel ─────────────────────────────────────────────────────
+      - name: Build kernel
+        working-directory: kernel
+        run: |
+          export PATH="${{ steps.vars.outputs.clang_dir }}/bin:${PATH}"
+          export KBUILD_BUILD_USER="${KBUILD_BUILD_USER}"
+          export KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST}"
+
+          echo "::group::Compiling with $(nproc) threads"
+          make -j"$(nproc)" O=out \
+            ARCH=${ARCH} SUBARCH=${SUBARCH} \
+            LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
+            Image dtbs 2>&1 | tee out/build.log
+          echo "::endgroup::"
+
+      # ── Verify build output ──────────────────────────────────────────────
+      - name: Verify build output
+        working-directory: kernel
+        run: |
+          IMAGE="out/arch/${ARCH}/boot/Image"
+          DTBO="out/arch/${ARCH}/boot/dts/vendor/qcom/dtbo.img"
+          DTB="out/arch/${ARCH}/boot/dts/vendor/qcom/lahaina-v2.1.dtb"
+
+          if [[ ! -f "${IMAGE}" ]]; then
+            echo "::error::Build failed — no Image produced"
+            tail -100 out/build.log 2>/dev/null || true
+            exit 1
+          fi
+
+          if [[ ! -f "${DTBO}" ]]; then
+            echo "::error::Build failed — no dtbo.img produced"
+            exit 1
+          fi
+
+          echo "Image size: $(du -h "${IMAGE}" | cut -f1)"
+          echo "DTBO size:  $(du -h "${DTBO}" | cut -f1)"
+          [[ -f "${DTB}" ]] && echo "DTB size:   $(du -h "${DTB}" | cut -f1)"
+
+          # Print kernel version
+          make -s O=out ARCH=${ARCH} LLVM=1 kernelrelease
+
+      # ── Package AnyKernel3 zip ───────────────────────────────────────────
+      - name: Package AnyKernel3 zip
+        id: package
+        run: |
+          TIMESTAMP="${{ steps.vars.outputs.timestamp }}"
+          ZIP_NAME="${KERNEL_NAME}-${DEVICE}-${TIMESTAMP}.zip"
+          KERNEL_SRC="${GITHUB_WORKSPACE}/kernel"
+          STAGING="${GITHUB_WORKSPACE}/ak3-staging"
+
+          rm -rf "${STAGING}"
+          cp -r "${KERNEL_SRC}/AnyKernel3" "${STAGING}"
+          rm -rf "${STAGING}/.git" "${STAGING}/.github"
+
+          # Use the custom anykernel.sh from build/
+          cp "${KERNEL_SRC}/build/anykernel.sh" "${STAGING}/anykernel.sh"
+
+          # Copy kernel image
+          cp "${KERNEL_SRC}/out/arch/${ARCH}/boot/Image" "${STAGING}/"
+
+          # Copy DTB
+          DTB="${KERNEL_SRC}/out/arch/${ARCH}/boot/dts/vendor/qcom/lahaina-v2.1.dtb"
+          if [[ -f "${DTB}" ]]; then
+            mkdir -p "${STAGING}/dtb"
+            cp "${DTB}" "${STAGING}/dtb/"
+          fi
+
+          # Copy DTBO
+          DTBO="${KERNEL_SRC}/out/arch/${ARCH}/boot/dts/vendor/qcom/dtbo.img"
+          cp "${DTBO}" "${STAGING}/"
+
+          cd "${STAGING}"
+          zip -r9 "${GITHUB_WORKSPACE}/${ZIP_NAME}" . -x '*.git*' 'README.md' 'LICENSE'
+          cd "${GITHUB_WORKSPACE}"
+
+          echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "zip_path=${GITHUB_WORKSPACE}/${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Packaged: ${ZIP_NAME} ($(du -h "${ZIP_NAME}" | cut -f1))"
+
+      # ── Upload artifact ──────────────────────────────────────────────────
+      - name: Upload kernel zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.zip_name }}
+          path: ${{ steps.package.outputs.zip_path }}
+          retention-days: 1
+          compression-level: 0 # already zipped
+
+      # ── Upload build log on failure ──────────────────────────────────────
+      - name: Upload build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: kernel/out/build.log
+          retention-days: 1

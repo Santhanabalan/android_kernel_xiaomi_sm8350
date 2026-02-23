@@ -47,8 +47,25 @@ struct mi_disp_notifier {
 	void *data;
 };
 
+#if IS_ENABLED(CONFIG_DRM_MSM)
 int mi_disp_register_client(struct notifier_block *nb);
 int mi_disp_unregister_client(struct notifier_block *nb);
 int mi_disp_notifier_call_chain(unsigned long val, void *v);
+#else
+static inline int mi_disp_register_client(struct notifier_block *nb)
+{
+	return 0;
+}
+
+static inline int mi_disp_unregister_client(struct notifier_block *nb)
+{
+	return 0;
+}
+
+static inline int mi_disp_notifier_call_chain(unsigned long val, void *v)
+{
+	return 0;
+}
+#endif
 
 #endif /* _MI_DRM_NOTIFIER_H_ */

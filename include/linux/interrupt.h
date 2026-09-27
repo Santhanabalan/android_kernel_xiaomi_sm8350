@@ -68,7 +68,6 @@
  *		      system and should be processed on a big CPU.
  * IRQF_PRIME_AFFINE - Interrupt is critical to the overall performance of the
  *		       system and should be processed on a prime CPU.
->>>>>>> 2cff2813b5737 (kernel: Add tri-cluster API to affine IRQs and kthreads to fast CPUs)
  */
 #define IRQF_SHARED		0x00000080
 #define IRQF_PROBE_SHARED	0x00000100

@@ -1897,7 +1897,7 @@ static int z_erofs_readpage(struct file *file, struct page *page)
 	struct page *pagepool = NULL;
 	int err;
 
-//	trace_erofs_readpage(page, false);
+	trace_erofs_readpage(page, false);
 	f.headoffset = (erofs_off_t)page->index << PAGE_SHIFT;
 
 	z_erofs_pcluster_readmore(&f, NULL, f.headoffset + PAGE_SIZE - 1,
@@ -1933,7 +1933,7 @@ static void z_erofs_readahead(struct readahead_control *rac)
 	z_erofs_pcluster_readmore(&f, rac, f.headoffset +
 				  readahead_length(rac) - 1, &pagepool, true);
 	nr_pages = readahead_count(rac);
-	//trace_erofs_readpages(inode, readahead_index(rac), nr_pages, false);
+	trace_erofs_readpages(inode, readahead_index(rac), nr_pages, false);
 
 	while ((page = readahead_page(rac))) {
 		set_page_private(page, (unsigned long)head);

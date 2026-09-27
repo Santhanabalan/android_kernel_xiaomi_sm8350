@@ -598,7 +598,7 @@ static bool oom_reap_task_mm(struct task_struct *tsk, struct mm_struct *mm)
 	bool ret = true;
 
 	if (!mmap_read_trylock(mm)) {
-		//trace_skip_task_reaping(tsk->pid);
+		trace_skip_task_reaping(tsk->pid);
 		return false;
 	}
 
@@ -609,24 +609,24 @@ static bool oom_reap_task_mm(struct task_struct *tsk, struct mm_struct *mm)
 	 * down_write();up_write() cycle in exit_mmap().
 	 */
 	if (test_bit(MMF_OOM_SKIP, &mm->flags)) {
-		//trace_skip_task_reaping(tsk->pid);
+		trace_skip_task_reaping(tsk->pid);
 		goto out_unlock;
 	}
 
-	//trace_start_task_reaping(tsk->pid);
+	trace_start_task_reaping(tsk->pid);
 
 	/* failed to reap part of the address space. Try again later */
-	//ret = __oom_reap_task_mm(mm);
-	//if (!ret)
-	//	goto out_finish;
+	ret = __oom_reap_task_mm(mm);
+	if (!ret)
+		goto out_finish;
 
-	//pr_info("oom_reaper: reaped process %d (%s), now anon-rss:%lukB, file-rss:%lukB, shmem-rss:%lukB\n",
-	//		task_pid_nr(tsk), tsk->comm,
-	//		K(get_mm_counter(mm, MM_ANONPAGES)),
-	//		K(get_mm_counter(mm, MM_FILEPAGES)),
-	//		K(get_mm_counter(mm, MM_SHMEMPAGES)));
-//out_finish:
-//	trace_finish_task_reaping(tsk->pid);
+	pr_info("oom_reaper: reaped process %d (%s), now anon-rss:%lukB, file-rss:%lukB, shmem-rss:%lukB\n",
+			task_pid_nr(tsk), tsk->comm,
+			K(get_mm_counter(mm, MM_ANONPAGES)),
+			K(get_mm_counter(mm, MM_FILEPAGES)),
+			K(get_mm_counter(mm, MM_SHMEMPAGES)));
+out_finish:
+	trace_finish_task_reaping(tsk->pid);
 out_unlock:
 	mmap_read_unlock(mm);
 
@@ -705,7 +705,7 @@ static void wake_oom_reaper(struct task_struct *tsk)
 	tsk->oom_reaper_list = oom_reaper_list;
 	oom_reaper_list = tsk;
 	spin_unlock(&oom_reaper_lock);
-	//trace_wake_reaper(tsk->pid);
+	trace_wake_reaper(tsk->pid);
 	wake_up(&oom_reaper_wait);
 }
 
@@ -759,7 +759,7 @@ static void mark_oom_victim(struct task_struct *tsk)
 	 */
 	__thaw_task(tsk);
 	atomic_inc(&oom_victims);
-	//trace_mark_victim(tsk->pid);
+	trace_mark_victim(tsk->pid);
 }
 
 /**

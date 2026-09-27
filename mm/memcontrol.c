@@ -4474,7 +4474,7 @@ void mem_cgroup_track_foreign_dirty_slowpath(struct page *page,
 	int oldest = -1;
 	int i;
 
-	//trace_track_foreign_dirty(page, wb);
+	trace_track_foreign_dirty(page, wb);
 
 	/*
 	 * Pick the slot to use.  If there is already a slot for @wb, keep
@@ -4536,7 +4536,7 @@ void mem_cgroup_flush_foreign(struct bdi_writeback *wb)
 		if (time_after64(frn->at, now - intv) &&
 		    atomic_read(&frn->done.cnt) == 1) {
 			frn->at = 0;
-			//trace_flush_foreign(wb, frn->bdi_id, frn->memcg_id);
+			trace_flush_foreign(wb, frn->bdi_id, frn->memcg_id);
 			cgroup_writeback_by_id(frn->bdi_id, frn->memcg_id, 0,
 					       WB_REASON_FOREIGN_FLUSH,
 					       &frn->done);

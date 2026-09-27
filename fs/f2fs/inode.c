@@ -510,13 +510,13 @@ struct inode *f2fs_iget(struct super_block *sb, unsigned long ino)
 			f2fs_err(sbi, "inaccessible inode: %lu, run fsck to repair", ino);
 			set_sbi_flag(sbi, SBI_NEED_FSCK);
 			ret = -EFSCORRUPTED;
-			//trace_f2fs_iget_exit(inode, ret);
+			trace_f2fs_iget_exit(inode, ret);
 			iput(inode);
 			f2fs_handle_error(sbi, ERROR_CORRUPTED_INODE);
 			return ERR_PTR(ret);
 		}
 
-		//trace_f2fs_iget(inode);
+		trace_f2fs_iget(inode);
 		return inode;
 	}
 
@@ -579,13 +579,13 @@ make_now:
 	}
 
 	unlock_new_inode(inode);
-	//trace_f2fs_iget(inode);
+	trace_f2fs_iget(inode);
 	return inode;
 
 bad_inode:
 	f2fs_inode_synced(inode);
 	iget_failed(inode);
-	//trace_f2fs_iget_exit(inode, ret);
+	trace_f2fs_iget_exit(inode, ret);
 	return ERR_PTR(ret);
 }
 
@@ -779,7 +779,7 @@ void f2fs_evict_inode(struct inode *inode)
 		fi->cow_inode = NULL;
 	}
 
-	//trace_f2fs_evict_inode(inode);
+	trace_f2fs_evict_inode(inode);
 	truncate_inode_pages_final(&inode->i_data);
 
 	if ((inode->i_nlink || is_bad_inode(inode)) &&

@@ -470,21 +470,21 @@ static inline void
 debug_init(struct hrtimer *timer, clockid_t clockid,
 	   enum hrtimer_mode mode)
 {
-	//debug_hrtimer_init(timer);
-	//trace_hrtimer_init(timer, clockid, mode);
+	debug_hrtimer_init(timer);
+	trace_hrtimer_init(timer, clockid, mode);
 }
 
 static inline void debug_activate(struct hrtimer *timer,
 				  enum hrtimer_mode mode)
 {
-	//debug_hrtimer_activate(timer, mode);
-	//trace_hrtimer_start(timer, mode);
+	debug_hrtimer_activate(timer, mode);
+	trace_hrtimer_start(timer, mode);
 }
 
 static inline void debug_deactivate(struct hrtimer *timer)
 {
-	//debug_hrtimer_deactivate(timer);
-	//trace_hrtimer_cancel(timer);
+	debug_hrtimer_deactivate(timer);
+	trace_hrtimer_cancel(timer);
 }
 
 static struct hrtimer_clock_base *
@@ -1590,13 +1590,13 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
 	 * is dropped.
 	 */
 	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
-//	trace_hrtimer_expire_entry(timer, now);
+	trace_hrtimer_expire_entry(timer, now);
 	lockdep_hrtimer_enter(timer);
 
 	restart = fn(timer);
 
 	lockdep_hrtimer_exit(timer);
-//	trace_hrtimer_expire_exit(timer);
+	trace_hrtimer_expire_exit(timer);
 	raw_spin_lock_irq(&cpu_base->lock);
 
 	/*

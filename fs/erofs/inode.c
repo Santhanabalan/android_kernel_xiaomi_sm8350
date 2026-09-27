@@ -245,7 +245,7 @@ static int erofs_fill_inode(struct inode *inode)
 	unsigned int ofs;
 	int err = 0;
 
-//	trace_erofs_fill_inode(inode);
+	trace_erofs_fill_inode(inode);
 
 	/* read inode base data from disk */
 	kaddr = erofs_read_inode(&buf, inode, &ofs);

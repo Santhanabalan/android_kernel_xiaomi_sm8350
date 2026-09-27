@@ -1,7 +1,41 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the
+ * disclaimer below) provided that the following conditions are met:
+ *
+ *      * Redistributions of source code must retain the above copyright
+ *        notice, this list of conditions and the following disclaimer.
+ *
+ *      * Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials provided
+ *        with the distribution.
+ *
+ *      * Neither the name of Qualcomm Innovation Center, Inc. nor the
+ *        names of its contributors may be used to endorse or promote
+ *        products derived from this software without specific prior
+ *        written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
 * Add support for 24 and 32bit format for ASM loopback and playback session.
@@ -135,6 +169,10 @@ static struct msm_ec_ref_port_cfg ec_ref_port_cfg;
 	extern void msm_crus_pb_add_controls(struct snd_soc_component *platform);
 	extern void msm_crus_pb_set_copp_idx(int port_id, int copp_idx);
 #endif
+
+static int32_t mclk_cfg_be_idx;
+static int32_t mclk_cfg_src_id;
+static uint32_t mclk_cfg_freq;
 
 #define WEIGHT_0_DB 0x4000
 /* all the FEs which can support channel mixer */
@@ -2308,7 +2346,7 @@ static int msm_pcm_routing_channel_mixer_v2(int fe_id, bool perf_mode,
 	int i = 0, j = 0, be_id = 0;
 	int ret = 0;
 
-	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
+	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
 		return 0;
 	}
@@ -2376,7 +2414,7 @@ static int msm_pcm_routing_channel_mixer(int fe_id, bool perf_mode,
 		return ret;
 	}
 
-	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
+	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
 		return 0;
 	}
@@ -27004,6 +27042,10 @@ static const struct snd_kcontrol_new mmul17_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_MI2S_TX,
 	MSM_FRONTEND_DAI_MULTIMEDIA17, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("SEC_MI2S_TX", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SECONDARY_MI2S_TX,
+	MSM_FRONTEND_DAI_MULTIMEDIA17, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 	SOC_DOUBLE_EXT("INT3_MI2S_TX", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_INT3_MI2S_TX,
 	MSM_FRONTEND_DAI_MULTIMEDIA17, 1, 0, msm_routing_get_audio_mixer,
@@ -30830,6 +30872,10 @@ static const struct snd_kcontrol_new wsa_cdc_dma_rx_0_port_mixer_controls[] = {
 	MSM_BACKEND_DAI_WSA_CDC_DMA_RX_0,
 	MSM_BACKEND_DAI_TX_CDC_DMA_TX_3, 1, 0, msm_routing_get_port_mixer,
 	msm_routing_put_port_mixer),
+	SOC_DOUBLE_EXT("SLIM_7_TX", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_WSA_CDC_DMA_RX_0,
+	MSM_BACKEND_DAI_SLIMBUS_7_TX, 1, 0, msm_routing_get_port_mixer,
+	msm_routing_put_port_mixer),
 	SOC_DOUBLE_EXT("SLIM_8_TX", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_WSA_CDC_DMA_RX_0,
 	MSM_BACKEND_DAI_SLIMBUS_8_TX, 1, 0, msm_routing_get_port_mixer,
@@ -32564,8 +32610,13 @@ done:
 static int msm_source_tracking_info(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_info *uinfo)
 {
-	uinfo->type = SNDRV_CTL_ELEM_TYPE_BYTES;
-	uinfo->count = sizeof(struct source_tracking_param);
+	if (strnstr(kcontrol->id.name, "FNN", sizeof("FNN"))) {
+		uinfo->type = SNDRV_CTL_ELEM_TYPE_BYTES;
+		uinfo->count = sizeof(struct fluence_nn_source_tracking_param);
+	} else {
+		uinfo->type = SNDRV_CTL_ELEM_TYPE_BYTES;
+		uinfo->count = sizeof(struct source_tracking_param);
+	}
 
 	return 0;
 }
@@ -32575,20 +32626,33 @@ static int msm_voice_source_tracking_get(struct snd_kcontrol *kcontrol,
 {
 	int ret = 0;
 	struct source_tracking_param sourceTrackingData;
+	struct fluence_nn_source_tracking_param FnnSourceTrackingData;
 
-	memset(&sourceTrackingData, 0, sizeof(struct source_tracking_param));
+	if (strnstr(kcontrol->id.name, "FNN", sizeof("FNN"))) {
+		memset(&FnnSourceTrackingData, 0, sizeof(struct fluence_nn_source_tracking_param));
+		ret = voc_get_fnn_source_tracking(&FnnSourceTrackingData);
+		if (ret) {
+			pr_err("%s: Error getting FNN ST Params, err=%d\n",
+				__func__, ret);
 
-	ret = voc_get_source_tracking(&sourceTrackingData);
-	if (ret) {
-		pr_debug("%s: Error getting Source Tracking Params, err=%d\n",
-			  __func__, ret);
+			ret = -EINVAL;
+			goto done;
+		}
+		memcpy(ucontrol->value.bytes.data, (void *)&FnnSourceTrackingData,
+			sizeof(struct fluence_nn_source_tracking_param));
+	} else {
+		memset(&sourceTrackingData, 0, sizeof(struct source_tracking_param));
+		ret = voc_get_source_tracking(&sourceTrackingData);
+		if (ret) {
+			pr_err("%s: Error getting Source Tracking Params, err=%d\n",
+				__func__, ret);
 
-		ret = -EINVAL;
-		goto done;
+			ret = -EINVAL;
+			goto done;
+		}
+		memcpy(ucontrol->value.bytes.data, (void *)&sourceTrackingData,
+			sizeof(struct source_tracking_param));
 	}
-	memcpy(ucontrol->value.bytes.data, (void *)&sourceTrackingData,
-		sizeof(struct source_tracking_param));
-
 done:
 	return ret;
 }
@@ -32788,12 +32852,18 @@ done:
 static int msm_audio_source_tracking_get(struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
 {
-	int ret = 0;
+	int ret = -EINVAL;
 	struct source_tracking_param sourceTrackingData;
+	struct fluence_nn_source_tracking_param FnnSourceTrackingData;
 	int port_id, copp_idx;
 
-	ret = msm_audio_sound_focus_derive_port_id(kcontrol,
-				"Source Tracking Audio Tx ", &port_id);
+	if (strnstr(kcontrol->id.name, "FNN", sizeof("FNN"))) {
+		ret = msm_audio_sound_focus_derive_port_id(kcontrol,
+				"FNN STM Audio Tx ", &port_id);
+	} else {
+		ret = msm_audio_sound_focus_derive_port_id(kcontrol,
+					"Source Tracking Audio Tx ", &port_id);
+	}
 	if (ret) {
 		pr_err("%s: Error in deriving port id, err=%d\n",
 			  __func__, ret);
@@ -32812,17 +32882,29 @@ static int msm_audio_source_tracking_get(struct snd_kcontrol *kcontrol,
 		goto done;
 	}
 
-	ret = adm_get_source_tracking(port_id, copp_idx, &sourceTrackingData);
-	if (ret) {
-		pr_err("%s: Error getting Source Tracking Params, err=%d\n",
-			  __func__, ret);
+	if (strnstr(kcontrol->id.name, "FNN", sizeof("FNN"))) {
+		ret = adm_get_fnn_source_tracking(port_id, copp_idx, &FnnSourceTrackingData);
+		if (ret) {
+			pr_err("%s: Error getting FNN STM Params, err=%d\n",
+				__func__, ret);
 
-		ret = -EINVAL;
-		goto done;
-	}
+			ret = -EINVAL;
+			goto done;
+		}
+		memcpy(ucontrol->value.bytes.data, (void *)&FnnSourceTrackingData,
+			sizeof(struct fluence_nn_source_tracking_param));
+	} else {
+		ret = adm_get_source_tracking(port_id, copp_idx, &sourceTrackingData);
+		if (ret) {
+			pr_err("%s: Error getting Source Tracking Params, err=%d\n",
+				__func__, ret);
 
-	memcpy(ucontrol->value.bytes.data, (void *)&sourceTrackingData,
+			ret = -EINVAL;
+			goto done;
+		}
+		memcpy(ucontrol->value.bytes.data, (void *)&sourceTrackingData,
 		sizeof(struct source_tracking_param));
+	}
 
 done:
 	return ret;
@@ -32898,6 +32980,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.get	= msm_voice_source_tracking_get,
 	},
 	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Voice Tx SLIMBUS_0",
+		.info	= msm_source_tracking_info,
+		.get	= msm_voice_source_tracking_get,
+	},
+	{
 		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Sound Focus Audio Tx SLIMBUS_0",
@@ -32909,6 +32998,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.access = SNDRV_CTL_ELEM_ACCESS_READ,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Source Tracking Audio Tx SLIMBUS_0",
+		.info	= msm_source_tracking_info,
+		.get	= msm_audio_source_tracking_get,
+	},
+	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Audio Tx SLIMBUS_0",
 		.info	= msm_source_tracking_info,
 		.get	= msm_audio_source_tracking_get,
 	},
@@ -32928,6 +33024,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.get	= msm_voice_source_tracking_get,
 	},
 	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Voice Tx TERT_MI2S",
+		.info	= msm_source_tracking_info,
+		.get	= msm_voice_source_tracking_get,
+	},
+	{
 		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Sound Focus Audio Tx TERT_MI2S",
@@ -32939,6 +33042,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.access = SNDRV_CTL_ELEM_ACCESS_READ,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Source Tracking Audio Tx TERT_MI2S",
+		.info	= msm_source_tracking_info,
+		.get	= msm_audio_source_tracking_get,
+	},
+	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Audio Tx TERT_MI2S",
 		.info	= msm_source_tracking_info,
 		.get	= msm_audio_source_tracking_get,
 	},
@@ -32958,6 +33068,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.get	= msm_voice_source_tracking_get,
 	},
 	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Voice Tx INT3_MI2S",
+		.info	= msm_source_tracking_info,
+		.get	= msm_voice_source_tracking_get,
+	},
+	{
 		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Sound Focus Audio Tx INT3_MI2S",
@@ -32969,6 +33086,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.access = SNDRV_CTL_ELEM_ACCESS_READ,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Source Tracking Audio Tx INT3_MI2S",
+		.info	= msm_source_tracking_info,
+		.get	= msm_audio_source_tracking_get,
+	},
+	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Audio Tx INT3_MI2S",
 		.info	= msm_source_tracking_info,
 		.get	= msm_audio_source_tracking_get,
 	},
@@ -32988,6 +33112,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.get	= msm_voice_source_tracking_get,
 	},
 	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Voice Tx VA_CDC_DMA_TX_0",
+		.info	= msm_source_tracking_info,
+		.get	= msm_voice_source_tracking_get,
+	},
+	{
 		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Sound Focus Audio Tx VA_CDC_DMA_TX_0",
@@ -32999,6 +33130,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.access = SNDRV_CTL_ELEM_ACCESS_READ,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Source Tracking Audio Tx VA_CDC_DMA_TX_0",
+		.info	= msm_source_tracking_info,
+		.get	= msm_audio_source_tracking_get,
+	},
+	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Audio Tx VA_CDC_DMA_TX_0",
 		.info	= msm_source_tracking_info,
 		.get	= msm_audio_source_tracking_get,
 	},
@@ -33018,6 +33156,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.get	= msm_voice_source_tracking_get,
 	},
 	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Voice Tx TX_CDC_DMA_TX_3",
+		.info	= msm_source_tracking_info,
+		.get	= msm_voice_source_tracking_get,
+	},
+	{
 		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Sound Focus Audio Tx TX_CDC_DMA_TX_3",
@@ -33029,6 +33174,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.access = SNDRV_CTL_ELEM_ACCESS_READ,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Source Tracking Audio Tx TX_CDC_DMA_TX_3",
+		.info	= msm_source_tracking_info,
+		.get	= msm_audio_source_tracking_get,
+	},
+	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Audio Tx TX_CDC_DMA_TX_3",
 		.info	= msm_source_tracking_info,
 		.get	= msm_audio_source_tracking_get,
 	},
@@ -33048,6 +33200,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.get	= msm_voice_source_tracking_get,
 	},
 	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Voice Tx QUIN_TDM_TX_0",
+		.info	= msm_source_tracking_info,
+		.get	= msm_voice_source_tracking_get,
+	},
+	{
 		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Sound Focus Audio Tx QUIN_TDM_TX_0",
@@ -33059,6 +33218,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.access = SNDRV_CTL_ELEM_ACCESS_READ,
 		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 		.name	= "Source Tracking Audio Tx QUIN_TDM_TX_0",
+		.info	= msm_source_tracking_info,
+		.get	= msm_audio_source_tracking_get,
+	},
+	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Audio Tx QUIN_TDM_TX_0",
 		.info	= msm_source_tracking_info,
 		.get	= msm_audio_source_tracking_get,
 	},
@@ -33076,6 +33242,13 @@ static const struct snd_kcontrol_new msm_source_tracking_controls[] = {
 		.name   = "Source Tracking Audio Tx PRIMARY_TDM",
 		.info   = msm_source_tracking_info,
 		.get    = msm_audio_source_tracking_get,
+	},
+	{
+		.access = SNDRV_CTL_ELEM_ACCESS_READ,
+		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name	= "FNN STM Audio Tx PRIMARY_TDM",
+		.info	= msm_source_tracking_info,
+		.get	= msm_audio_source_tracking_get,
 	},
 };
 
@@ -36844,6 +37017,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"SLIM1_UL_HL", NULL, "SLIMBUS_1_TX"},
 	{"SLIM3_UL_HL", NULL, "SLIMBUS_3_TX"},
 	{"SLIM4_UL_HL", NULL, "SLIMBUS_4_TX"},
+	{"SLIM7_UL_HL", NULL, "SLIMBUS_7_TX"},
 	{"SLIM8_UL_HL", NULL, "SLIMBUS_8_TX"},
 	{"WSA_CDC_DMA_RX_0_DL_HL", "Switch", "CDC_DMA_DL_HL"},
 	{"WSA_CDC_DMA_RX_0", NULL, "WSA_CDC_DMA_RX_0_DL_HL"},
@@ -36970,6 +37144,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	/* connect to INT4_MI2S_DL_HL since same pcm_id */
 	{"WSA_CDC_DMA_RX_0 Port Mixer", "VA_CDC_DMA_TX_0", "VA_CDC_DMA_TX_0"},
 	{"WSA_CDC_DMA_RX_0 Port Mixer", "TX_CDC_DMA_TX_3", "TX_CDC_DMA_TX_3"},
+	{"WSA_CDC_DMA_RX_0 Port Mixer", "SLIM_7_TX", "SLIMBUS_7_TX"},
 	{"WSA_CDC_DMA_RX_0 Port Mixer", "SLIM_8_TX", "SLIMBUS_8_TX"},
 	{"WSA_CDC_DMA_RX_0", NULL, "WSA_CDC_DMA_RX_0 Port Mixer"},
 
@@ -41394,6 +41569,7 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 	{"MultiMedia29 Mixer", "PRI_MI2S_TX", "PRI_MI2S_TX"},
 	{"MultiMedia30 Mixer", "PRI_MI2S_TX", "PRI_MI2S_TX"},
 	{"MultiMedia8 Mixer", "PRI_MI2S_TX", "PRI_MI2S_TX"},
+	{"MultiMedia17 Mixer", "SEC_MI2S_TX", "SEC_MI2S_TX"},
 	{"MultiMedia18 Mixer", "SEC_MI2S_TX", "SEC_MI2S_TX"},
 	{"MultiMedia19 Mixer", "SEC_MI2S_TX", "SEC_MI2S_TX"},
 	{"MultiMedia28 Mixer", "SEC_MI2S_TX", "SEC_MI2S_TX"},
@@ -42863,6 +43039,16 @@ static const struct snd_kcontrol_new
 	},
 };
 
+static int msm_routing_get_mclk_src_cfg(struct snd_kcontrol *kcontrol,
+                                        struct snd_ctl_elem_value *ucontrol)
+{
+	ucontrol->value.integer.value[0] = mclk_cfg_be_idx;
+	ucontrol->value.integer.value[1] = mclk_cfg_src_id;
+	ucontrol->value.integer.value[2] = mclk_cfg_freq;
+
+        return 0;
+}
+
 static int msm_routing_put_mclk_src_cfg(struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
 {
@@ -42874,6 +43060,10 @@ static int msm_routing_put_mclk_src_cfg(struct snd_kcontrol *kcontrol,
 	be_idx = ucontrol->value.integer.value[0];
 	mclk_src_id = ucontrol->value.integer.value[1];
 	mclk_freq = ucontrol->value.integer.value[2];
+
+	mclk_cfg_be_idx = be_idx;
+	mclk_cfg_src_id = mclk_src_id;
+	mclk_cfg_freq = mclk_freq;
 
 	if (be_idx < 0 || be_idx >= MSM_BACKEND_DAI_MAX) {
 		pr_err("%s: Invalid be id %d\n", __func__, be_idx);
@@ -42904,7 +43094,8 @@ static int msm_routing_put_mclk_src_cfg(struct snd_kcontrol *kcontrol,
 
 static const struct snd_kcontrol_new mclk_src_controls[] = {
 	SOC_SINGLE_MULTI_EXT("MCLK_SRC CFG", SND_SOC_NOPM, 0, 24576000, 0, 3,
-					NULL, msm_routing_put_mclk_src_cfg),
+			     msm_routing_get_mclk_src_cfg,
+			     msm_routing_put_mclk_src_cfg),
 };
 
 static int msm_routing_stereo_channel_reverse_control_get(

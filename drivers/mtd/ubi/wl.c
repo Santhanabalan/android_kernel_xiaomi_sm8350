@@ -861,7 +861,14 @@ static int wear_leveling_worker(struct ubi_device *ubi, struct ubi_work *wrk,
 			goto out_not_moved;
 		}
 		if (err == MOVE_RETRY) {
-			scrubbing = 1;
+			/*
+			 * For source PEB:
+			 * 1. The scrubbing is set for scrub type PEB, it will
+			 *    be put back into ubi->scrub list.
+			 * 2. Non-scrub type PEB will be put back into ubi->used
+			 *    list.
+			 */
+			keep = 1;
 			dst_leb_clean = 1;
 			goto out_not_moved;
 		}
@@ -1286,7 +1293,6 @@ int ubi_wl_put_peb(struct ubi_device *ubi, int vol_id, int lnum,
 retry:
 	spin_lock(&ubi->wl_lock);
 	e = ubi->lookuptbl[pnum];
-	e->sqnum = UBI_UNKNOWN;
 	if (!e) {
 		/*
 		 * This wl entry has been removed for some errors by other
@@ -1299,6 +1305,7 @@ retry:
 		up_read(&ubi->fm_protect);
 		return 0;
 	}
+	e->sqnum = UBI_UNKNOWN;
 	if (e == ubi->move_from) {
 		/*
 		 * User is putting the physical eraseblock which was selected to

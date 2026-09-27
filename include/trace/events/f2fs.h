@@ -141,6 +141,7 @@ TRACE_DEFINE_ENUM(EX_BLOCK_AGE);
 		{ CP_FASTBOOT_MODE,	"fastboot mode" },		\
 		{ CP_SPEC_LOG_NUM,	"log type is 2" },		\
 		{ CP_RECOVER_DIR,	"dir needs recovery" },	\
+		{ CP_XATTR_DIR,		"dir's xattr updated" },	\
 		{ CP_PARENT_XATTR_SET,	"parent xattr is set" })
 #else
 #define show_fsync_cpreason(type)					\
@@ -155,7 +156,8 @@ TRACE_DEFINE_ENUM(EX_BLOCK_AGE);
 		{ CP_NODE_NEED_CP,	"node needs cp" },		\
 		{ CP_FASTBOOT_MODE,	"fastboot mode" },		\
 		{ CP_SPEC_LOG_NUM,	"log type is 2" },		\
-		{ CP_RECOVER_DIR,	"dir needs recovery" })
+		{ CP_RECOVER_DIR,	"dir needs recovery" },		\
+		{ CP_XATTR_DIR,		"dir's xattr updated" })
 #endif
 
 #define show_shutdown_mode(type)					\

@@ -287,7 +287,7 @@ static int mv_cesa_des_setkey(struct crypto_skcipher *cipher, const u8 *key,
 static int mv_cesa_des3_ede_setkey(struct crypto_skcipher *cipher,
 				   const u8 *key, unsigned int len)
 {
-	struct mv_cesa_des_ctx *ctx = crypto_skcipher_ctx(cipher);
+	struct mv_cesa_des3_ctx *ctx = crypto_skcipher_ctx(cipher);
 	int err;
 
 	err = verify_skcipher_des3_key(cipher, key);
@@ -446,6 +446,9 @@ static int mv_cesa_skcipher_queue_req(struct skcipher_request *req,
 	int ret;
 	struct mv_cesa_skcipher_req *creq = skcipher_request_ctx(req);
 	struct mv_cesa_engine *engine;
+
+	if (!req->cryptlen)
+		return 0;
 
 	ret = mv_cesa_skcipher_req_init(req, tmpl);
 	if (ret)

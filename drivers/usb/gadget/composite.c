@@ -894,7 +894,7 @@ static int set_config(struct usb_composite_dev *cdev,
 		goto done;
 
 #ifdef CONFIG_QGKI_MSM_BOOT_TIME_MARKER
-	place_marker("M - USB Device is enumerated");
+	update_marker("M - USB device is enumerated");
 #endif
 	usb_gadget_set_state(gadget, USB_STATE_CONFIGURED);
 	cdev->config = c;
@@ -1979,6 +1979,18 @@ unknown:
 			memset(buf, 0, w_length);
 			buf[5] = 0x01;
 			switch (ctrl->bRequestType & USB_RECIP_MASK) {
+			/*
+			 * The Microsoft CompatID OS Descriptor Spec(w_index = 0x4) and
+			 * Extended Prop OS Desc Spec(w_index = 0x5) state that the
+			 * HighByte of wValue is the InterfaceNumber and the LowByte is
+			 * the PageNumber. This high/low byte ordering is incorrectly
+			 * documented in the Spec. USB analyzer output on the below
+			 * request packets show the high/low byte inverted i.e LowByte
+			 * is the InterfaceNumber and the HighByte is the PageNumber.
+			 * Since we dont support >64KB CompatID/ExtendedProp descriptors,
+			 * PageNumber is set to 0. Hence verify that the HighByte is 0
+			 * for below two cases.
+			 */
 			case USB_RECIP_DEVICE:
 				if (w_index != 0x4 || (w_value >> 8))
 					break;
@@ -2437,7 +2449,7 @@ void composite_resume(struct usb_gadget *gadget)
 	 */
 	INFO(cdev, "USB Resume end\n");
 #ifdef CONFIG_QGKI_MSM_BOOT_TIME_MARKER
-	place_marker("M - USB Device is resumed");
+	update_marker("M - USB device is resumed");
 #endif
 	if (cdev->driver->resume)
 		cdev->driver->resume(cdev);

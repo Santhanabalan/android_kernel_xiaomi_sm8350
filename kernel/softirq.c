@@ -134,8 +134,8 @@ static void __local_bh_enable(unsigned int cnt)
 {
 	lockdep_assert_irqs_disabled();
 
-	if (preempt_count() == cnt)
-		trace_preempt_on(CALLER_ADDR0, get_lock_parent_ip());
+	//if (preempt_count() == cnt)
+	//	trace_preempt_on(CALLER_ADDR0, get_lock_parent_ip());
 
 	if (softirq_count() == (cnt & SOFTIRQ_MASK))
 		lockdep_softirqs_on(_RET_IP_);
@@ -291,9 +291,9 @@ restart:
 
 		kstat_incr_softirqs_this_cpu(vec_nr);
 
-		trace_softirq_entry(vec_nr);
+		//trace_softirq_entry(vec_nr);
 		h->action(h);
-		trace_softirq_exit(vec_nr);
+		//trace_softirq_exit(vec_nr);
 		if (unlikely(prev_count != preempt_count())) {
 			pr_err("huh, entered softirq %u %s %p with preempt_count %08x, exited with %08x?\n",
 			       vec_nr, softirq_to_name[vec_nr], h->action,
@@ -452,7 +452,7 @@ void raise_softirq(unsigned int nr)
 
 void __raise_softirq_irqoff(unsigned int nr)
 {
-	trace_softirq_raise(nr);
+	//trace_softirq_raise(nr);
 	or_softirq_pending(1UL << nr);
 }
 
@@ -524,9 +524,9 @@ static void tasklet_action_common(struct softirq_action *a,
 				if (!test_and_clear_bit(TASKLET_STATE_SCHED,
 							&t->state))
 					BUG();
-				trace_tasklet_entry(t->func);
+				//trace_tasklet_entry(t->func);
 				t->func(t->data);
-				trace_tasklet_exit(t->func);
+				//trace_tasklet_exit(t->func);
 				tasklet_unlock(t);
 				continue;
 			}

@@ -618,9 +618,9 @@ static inline u64 freq_policy_load(struct rq *rq)
 	}
 
 done:
-	trace_sched_load_to_gov(rq, aggr_grp_load, tt_load, sched_freq_aggr_en,
-				load, reporting_policy, walt_rotation_enabled,
-				sysctl_sched_user_hint);
+	//trace_sched_load_to_gov(rq, aggr_grp_load, tt_load, sched_freq_aggr_en,
+	//			load, reporting_policy, walt_rotation_enabled,
+	//			sysctl_sched_user_hint);
 	return load;
 }
 
@@ -1262,9 +1262,9 @@ static u32 get_pred_busy(struct task_struct *p,
 	 */
 	ret = max(runtime, ret);
 out:
-	trace_sched_update_pred_demand(p, runtime,
-		mult_frac((unsigned int)cur_freq_runtime, 100,
-			  sched_ravg_window), ret);
+	//trace_sched_update_pred_demand(p, runtime,
+	//	mult_frac((unsigned int)cur_freq_runtime, 100,
+	//		  sched_ravg_window), ret);
 	return ret;
 }
 
@@ -1998,7 +1998,7 @@ static void update_history(struct rq *rq, struct task_struct *p,
 				p->wts.unfilter - rq->wrq.prev_window_size);
 
 done:
-	trace_sched_update_history(rq, p, runtime, samples, event);
+	//trace_sched_update_history(rq, p, runtime, samples, event);
 }
 
 static u64 add_to_task_demand(struct rq *rq, struct task_struct *p, u64 delta)
@@ -2206,8 +2206,8 @@ update_task_rq_cpu_cycles(struct task_struct *p, struct rq *rq, int event,
 				time_delta *
 					rq->wrq.cluster->max_possible_freq);
 
-		trace_sched_get_task_cpu_cycles(cpu, event,
-				cycles_delta, time_delta, p);
+		//trace_sched_get_task_cpu_cycles(cpu, event,
+		//		cycles_delta, time_delta, p);
 	}
 
 	p->wts.cpu_cycles = cur_cycles;
@@ -2224,7 +2224,7 @@ static inline void run_walt_irq_work(u64 old_window_start, struct rq *rq)
 				   rq->wrq.window_start);
 	if (result == old_window_start) {
 		walt_irq_work_queue(&walt_cpufreq_irq_work);
-		trace_walt_window_rollover(rq->wrq.window_start);
+		//trace_walt_window_rollover(rq->wrq.window_start);
 	}
 }
 
@@ -2253,10 +2253,10 @@ void walt_update_task_ravg(struct task_struct *p, struct rq *rq, int event,
 	if (event == PUT_PREV_TASK && p->state)
 		p->wts.iowaited = p->in_iowait;
 
-	trace_sched_update_task_ravg(p, rq, event, wallclock, irqtime,
-				&rq->wrq.grp_time);
-	trace_sched_update_task_ravg_mini(p, rq, event, wallclock, irqtime,
-				&rq->wrq.grp_time);
+	//trace_sched_update_task_ravg(p, rq, event, wallclock, irqtime,
+	//			&rq->wrq.grp_time);
+	//trace_sched_update_task_ravg_mini(p, rq, event, wallclock, irqtime,
+	//			&rq->wrq.grp_time);
 
 done:
 	p->wts.mark_start = wallclock;
@@ -2904,7 +2904,7 @@ static void _set_preferred_cluster(struct walt_related_thread_group *grp)
 
 	grp->last_update = wallclock;
 	update_best_cluster(grp, combined_demand, group_boost);
-	trace_sched_set_preferred_cluster(grp, combined_demand);
+	//trace_sched_set_preferred_cluster(grp, combined_demand);
 
 out:
 	if (grp->id == DEFAULT_CGROUP_COLOC_ID
@@ -3426,7 +3426,7 @@ static void transfer_busy_time(struct rq *rq,
 	p->wts.prev_window_cpu[cpu] = p->wts.prev_window;
 
 	walt_commit_prev_group_run_sum(rq);
-	trace_sched_migration_update_sum(p, migrate_type, rq);
+	//trace_sched_migration_update_sum(p, migrate_type, rq);
 }
 
 bool is_rtgb_active(void)
@@ -3629,9 +3629,9 @@ static void walt_irq_work(struct irq_work *irq_work)
 					sched_ravg_window,
 					new_sched_ravg_window,
 					sched_ravg_window_change_time);
-			trace_sched_ravg_window_change(sched_ravg_window,
-					new_sched_ravg_window,
-					sched_ravg_window_change_time);
+			//trace_sched_ravg_window_change(sched_ravg_window,
+			//		new_sched_ravg_window,
+			//		sched_ravg_window_change_time);
 			sched_ravg_window = new_sched_ravg_window;
 			walt_tunables_fixup();
 		}

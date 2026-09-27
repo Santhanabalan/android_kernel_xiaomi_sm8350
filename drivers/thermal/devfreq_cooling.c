@@ -320,8 +320,8 @@ static int devfreq_cooling_get_requested_power(struct thermal_cooling_device *cd
 		*power = dyn_power + static_power;
 	}
 
-	trace_thermal_power_devfreq_get_power(cdev, status, freq, dyn_power,
-					      static_power, *power);
+	//trace_thermal_power_devfreq_get_power(cdev, status, freq, dyn_power,
+	//				      static_power, *power);
 
 	return 0;
 fail:
@@ -388,7 +388,7 @@ static int devfreq_cooling_power2state(struct thermal_cooling_device *cdev,
 
 	*state = i;
 	dfc->capped_state = i;
-	trace_thermal_power_devfreq_limit(cdev, freq, *state, power);
+	//trace_thermal_power_devfreq_limit(cdev, freq, *state, power);
 	return 0;
 }
 

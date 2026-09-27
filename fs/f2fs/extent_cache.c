@@ -465,7 +465,7 @@ static bool __lookup_extent_tree(struct inode *inode, pgoff_t pgofs,
 	if (!et)
 		return false;
 
-	trace_f2fs_lookup_extent_tree_start(inode, pgofs, type);
+	//trace_f2fs_lookup_extent_tree_start(inode, pgofs, type);
 
 	read_lock(&et->lock);
 
@@ -499,10 +499,10 @@ out:
 	stat_inc_total_hit(sbi, type);
 	read_unlock(&et->lock);
 
-	if (type == EX_READ)
-		trace_f2fs_lookup_read_extent_tree_end(inode, pgofs, ei);
-	else if (type == EX_BLOCK_AGE)
-		trace_f2fs_lookup_age_extent_tree_end(inode, pgofs, ei);
+	//if (type == EX_READ)
+	//	trace_f2fs_lookup_read_extent_tree_end(inode, pgofs, ei);
+	//else if (type == EX_BLOCK_AGE)
+	//	trace_f2fs_lookup_age_extent_tree_end(inode, pgofs, ei);
 	return ret;
 }
 
@@ -611,12 +611,12 @@ static void __update_extent_tree_range(struct inode *inode,
 	if (!et)
 		return;
 
-	if (type == EX_READ)
-		trace_f2fs_update_read_extent_tree_range(inode, fofs, len,
-						tei->blk, 0);
-	else if (type == EX_BLOCK_AGE)
-		trace_f2fs_update_age_extent_tree_range(inode, fofs, len,
-						tei->age, tei->last_blocks);
+	//if (type == EX_READ)
+	//	trace_f2fs_update_read_extent_tree_range(inode, fofs, len,
+	//					tei->blk, 0);
+	//else if (type == EX_BLOCK_AGE)
+	//	trace_f2fs_update_age_extent_tree_range(inode, fofs, len,
+	//					tei->age, tei->last_blocks);
 
 	write_lock(&et->lock);
 
@@ -769,8 +769,8 @@ void f2fs_update_read_extent_tree_range_compressed(struct inode *inode,
 	struct rb_node **insert_p = NULL, *insert_parent = NULL;
 	bool leftmost = false;
 
-	trace_f2fs_update_read_extent_tree_range(inode, fofs, llen,
-						blkaddr, c_len);
+	//trace_f2fs_update_read_extent_tree_range(inode, fofs, llen,
+	//					blkaddr, c_len);
 
 	/* it is safe here to check FI_NO_EXTENT w/o et->lock in ro image */
 	if (is_inode_flag_set(inode, FI_NO_EXTENT))
@@ -967,7 +967,7 @@ free_node:
 unlock_out:
 	mutex_unlock(&eti->extent_tree_lock);
 out:
-	trace_f2fs_shrink_extent_tree(sbi, node_cnt, tree_cnt, type);
+	//trace_f2fs_shrink_extent_tree(sbi, node_cnt, tree_cnt, type);
 
 	return node_cnt + tree_cnt;
 }
@@ -1143,7 +1143,7 @@ static void __destroy_extent_tree(struct inode *inode, enum extent_type type)
 
 	F2FS_I(inode)->extent_tree[type] = NULL;
 
-	trace_f2fs_destroy_extent_tree(inode, node_cnt, type);
+	//trace_f2fs_destroy_extent_tree(inode, node_cnt, type);
 }
 
 void f2fs_destroy_extent_tree(struct inode *inode)

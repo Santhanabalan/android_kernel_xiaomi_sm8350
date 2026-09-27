@@ -105,7 +105,7 @@ static inline void __record_iostat_latency(struct f2fs_sb_info *sbi)
 	}
 	spin_unlock_irq(&sbi->iostat_lat_lock);
 
-	trace_f2fs_iostat_latency(sbi, iostat_lat);
+	//trace_f2fs_iostat_latency(sbi, iostat_lat);
 }
 
 static inline void f2fs_record_iostat(struct f2fs_sb_info *sbi)
@@ -132,7 +132,7 @@ static inline void f2fs_record_iostat(struct f2fs_sb_info *sbi)
 	}
 	spin_unlock(&sbi->iostat_lock);
 
-	trace_f2fs_iostat(sbi, iostat_diff);
+	//trace_f2fs_iostat(sbi, iostat_diff);
 
 	__record_iostat_latency(sbi);
 }

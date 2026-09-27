@@ -385,8 +385,8 @@ static void cpufreq_notify_transition(struct cpufreq_policy *policy,
 		pr_debug("FREQ: %u - CPUs: %*pbl\n", freqs->new,
 			 cpumask_pr_args(policy->cpus));
 
-		for_each_cpu(cpu, policy->cpus)
-			trace_cpu_frequency(freqs->new, cpu);
+		//for_each_cpu(cpu, policy->cpus)
+		//	trace_cpu_frequency(freqs->new, cpu);
 
 		srcu_notifier_call_chain(&cpufreq_transition_notifier_list,
 					 CPUFREQ_POSTCHANGE, freqs);
@@ -2473,7 +2473,7 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 
 	policy->min = new_data.min;
 	policy->max = new_data.max;
-	trace_cpu_frequency_limits(policy);
+	//trace_cpu_frequency_limits(policy);
 
 	arch_set_max_freq_scale(policy->cpus, policy->max);
 

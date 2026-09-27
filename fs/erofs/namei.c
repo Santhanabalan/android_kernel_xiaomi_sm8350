@@ -196,7 +196,7 @@ static struct dentry *erofs_lookup(struct inode *dir, struct dentry *dentry,
 	unsigned int d_type;
 	struct inode *inode;
 
-	trace_erofs_lookup(dir, dentry, flags);
+//	trace_erofs_lookup(dir, dentry, flags);
 
 	if (dentry->d_name.len > EROFS_NAME_LEN)
 		return ERR_PTR(-ENAMETOOLONG);

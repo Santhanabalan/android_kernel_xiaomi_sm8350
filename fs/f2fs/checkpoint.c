@@ -322,7 +322,7 @@ static int __f2fs_write_meta_page(struct page *page,
 {
 	struct f2fs_sb_info *sbi = F2FS_P_SB(page);
 
-	trace_f2fs_writepage(page, META);
+	//trace_f2fs_writepage(page, META);
 
 	if (unlikely(f2fs_cp_error(sbi))) {
 		if (is_sbi_flag_set(sbi, SBI_IS_CLOSE)) {
@@ -381,7 +381,7 @@ static int f2fs_write_meta_pages(struct address_space *mapping,
 	if (!f2fs_down_write_trylock(&sbi->cp_global_sem))
 		goto skip_write;
 
-	trace_f2fs_writepages(mapping->host, wbc, META);
+	//trace_f2fs_writepages(mapping->host, wbc, META);
 	diff = nr_pages_to_write(sbi, META, wbc);
 	written = f2fs_sync_meta_pages(sbi, META, wbc->nr_to_write, FS_META_IO);
 	f2fs_up_write(&sbi->cp_global_sem);
@@ -390,7 +390,7 @@ static int f2fs_write_meta_pages(struct address_space *mapping,
 
 skip_write:
 	wbc->pages_skipped += get_pages(sbi, F2FS_DIRTY_META);
-	trace_f2fs_writepages(mapping->host, wbc, META);
+	//trace_f2fs_writepages(mapping->host, wbc, META);
 	return 0;
 }
 
@@ -465,7 +465,7 @@ stop:
 
 static int f2fs_set_meta_page_dirty(struct page *page)
 {
-	trace_f2fs_set_page_dirty(page, META);
+	//trace_f2fs_set_page_dirty(page, META);
 
 	if (!PageUptodate(page))
 		SetPageUptodate(page);
@@ -1083,14 +1083,14 @@ int f2fs_sync_dirty_inodes(struct f2fs_sb_info *sbi, enum inode_type type,
 	bool is_dir = (type == DIR_INODE);
 	unsigned long ino = 0;
 
-	trace_f2fs_sync_dirty_inodes_enter(sbi->sb, is_dir,
-				get_pages(sbi, is_dir ?
-				F2FS_DIRTY_DENTS : F2FS_DIRTY_DATA));
+	//trace_f2fs_sync_dirty_inodes_enter(sbi->sb, is_dir,
+	//			get_pages(sbi, is_dir ?
+	//			F2FS_DIRTY_DENTS : F2FS_DIRTY_DATA));
 retry:
 	if (unlikely(f2fs_cp_error(sbi))) {
-		trace_f2fs_sync_dirty_inodes_exit(sbi->sb, is_dir,
-				get_pages(sbi, is_dir ?
-				F2FS_DIRTY_DENTS : F2FS_DIRTY_DATA));
+		//trace_f2fs_sync_dirty_inodes_exit(sbi->sb, is_dir,
+		//		get_pages(sbi, is_dir ?
+		//		F2FS_DIRTY_DENTS : F2FS_DIRTY_DATA));
 		return -EIO;
 	}
 
@@ -1099,9 +1099,9 @@ retry:
 	head = &sbi->inode_list[type];
 	if (list_empty(head)) {
 		spin_unlock(&sbi->inode_lock[type]);
-		trace_f2fs_sync_dirty_inodes_exit(sbi->sb, is_dir,
-				get_pages(sbi, is_dir ?
-				F2FS_DIRTY_DENTS : F2FS_DIRTY_DATA));
+		//trace_f2fs_sync_dirty_inodes_exit(sbi->sb, is_dir,
+		//		get_pages(sbi, is_dir ?
+		//		F2FS_DIRTY_DENTS : F2FS_DIRTY_DATA));
 		return 0;
 	}
 	fi = list_first_entry(head, struct f2fs_inode_info, dirty_list);
@@ -1665,7 +1665,7 @@ int f2fs_write_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 		goto out;
 	}
 
-	trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "start block_ops");
+	//trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "start block_ops");
 
 #ifdef CONFIG_F2FS_CP_OPT
 	/*
@@ -1679,7 +1679,7 @@ int f2fs_write_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 	if (err)
 		goto out;
 
-	trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "finish block_ops");
+	//trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "finish block_ops");
 
 	f2fs_flush_merged_writes(sbi);
 
@@ -1740,7 +1740,7 @@ stop:
 
 	/* update CP_TIME to trigger checkpoint periodically */
 	f2fs_update_time(sbi, CP_TIME);
-	trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "finish checkpoint");
+	//trace_f2fs_write_checkpoint(sbi->sb, cpc->reason, "finish checkpoint");
 out:
 	if (cpc->reason != CP_RESIZE)
 		f2fs_up_write(&sbi->cp_global_sem);

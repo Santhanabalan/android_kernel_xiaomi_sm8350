@@ -1555,8 +1555,8 @@ select_task_rq_rt(struct task_struct *p, int cpu, int sd_flag, int flags)
 	bool test;
 	int target_cpu = -1;
 
-	trace_android_rvh_select_task_rq_rt(p, cpu, sd_flag,
-					flags, &target_cpu);
+	//trace_android_rvh_select_task_rq_rt(p, cpu, sd_flag,
+	//				flags, &target_cpu);
 	if (target_cpu >= 0)
 		return target_cpu;
 
@@ -1944,7 +1944,7 @@ retry:
 		for_each_cpu_and(cpu, lowest_mask, sched_group_span(sg)) {
 			bool lt;
 
-			trace_sched_cpu_util(cpu);
+			//trace_sched_cpu_util(cpu);
 
 			if (cpu_isolated(cpu))
 				continue;
@@ -2034,7 +2034,7 @@ static int find_lowest_rq(struct task_struct *task)
 	int ret;
 	int lowest_cpu = -1;
 
-	trace_android_rvh_find_lowest_rq(task, lowest_mask, &lowest_cpu);
+	//trace_android_rvh_find_lowest_rq(task, lowest_mask, &lowest_cpu);
 	if (lowest_cpu >= 0)
 		return lowest_cpu;
 

@@ -712,14 +712,14 @@ next:
 		result = SCAN_LACK_REFERENCED_PAGE;
 	} else {
 		result = SCAN_SUCCEED;
-		trace_mm_collapse_huge_page_isolate(page, none_or_zero,
-						    referenced, writable, result);
+		//trace_mm_collapse_huge_page_isolate(page, none_or_zero,
+		//				    referenced, writable, result);
 		return 1;
 	}
 out:
 	release_pte_pages(pte, _pte, compound_pagelist);
-	trace_mm_collapse_huge_page_isolate(page, none_or_zero,
-					    referenced, writable, result);
+	//trace_mm_collapse_huge_page_isolate(page, none_or_zero,
+	//				    referenced, writable, result);
 	return 0;
 }
 
@@ -1022,17 +1022,17 @@ static bool __collapse_huge_page_swapin(struct mm_struct *mm,
 			mmap_read_lock(mm);
 			if (hugepage_vma_revalidate(mm, haddr, &vma)) {
 				/* vma is no longer available, don't continue to swapin */
-				trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, 0);
+				//trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, 0);
 				return false;
 			}
 			/* check if the pmd is still valid */
 			if (mm_find_pmd(mm, haddr) != pmd) {
-				trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, 0);
+				//trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, 0);
 				return false;
 			}
 		}
 		if (ret & VM_FAULT_ERROR) {
-			trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, 0);
+			//trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, 0);
 			return false;
 		}
 	}
@@ -1041,7 +1041,7 @@ static bool __collapse_huge_page_swapin(struct mm_struct *mm,
 	if (swapped_in)
 		lru_add_drain();
 
-	trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, 1);
+	//trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, 1);
 	return true;
 }
 
@@ -1209,7 +1209,7 @@ out_up_write:
 out_nolock:
 	if (!IS_ERR_OR_NULL(*hpage))
 		mem_cgroup_uncharge(*hpage);
-	trace_mm_collapse_huge_page(mm, isolated, result);
+	//trace_mm_collapse_huge_page(mm, isolated, result);
 	return;
 out:
 	goto out_up_write;
@@ -1349,8 +1349,8 @@ out_unmap:
 				referenced, unmapped);
 	}
 out:
-	trace_mm_khugepaged_scan_pmd(mm, page, writable, referenced,
-				     none_or_zero, result, unmapped);
+	//trace_mm_khugepaged_scan_pmd(mm, page, writable, referenced,
+	//			     none_or_zero, result, unmapped);
 	return ret;
 }
 

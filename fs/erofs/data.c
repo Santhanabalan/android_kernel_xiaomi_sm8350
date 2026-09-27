@@ -116,7 +116,7 @@ int erofs_map_blocks(struct inode *inode, struct erofs_map_blocks *map)
 	void *kaddr;
 	int err = 0;
 
-	trace_erofs_map_blocks_enter(inode, map, 0);
+	//trace_erofs_map_blocks_enter(inode, map, 0);
 	map->m_deviceid = 0;
 	if (map->m_la >= inode->i_size) {
 		/* leave out-of-bound access unmapped */
@@ -178,7 +178,7 @@ out_unlock:
 out:
 	if (!err)
 		map->m_llen = map->m_plen;
-	trace_erofs_map_blocks_exit(inode, map, 0, err);
+	//trace_erofs_map_blocks_exit(inode, map, 0, err);
 	return err;
 }
 

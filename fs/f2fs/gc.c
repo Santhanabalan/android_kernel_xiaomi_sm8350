@@ -217,8 +217,8 @@ do_gc:
 		if (foreground)
 			wake_up_all(&gc_th->fggc_wq);
 
-		trace_f2fs_background_gc(sbi->sb, wait_ms,
-				prefree_segments(sbi), free_segments(sbi));
+		//trace_f2fs_background_gc(sbi->sb, wait_ms,
+		//		prefree_segments(sbi), free_segments(sbi));
 
 		/* balancing f2fs's metadata periodically */
 		f2fs_balance_fs_bg(sbi, true);
@@ -997,10 +997,10 @@ got_result:
 
 	}
 out:
-	if (p.min_segno != NULL_SEGNO)
-		trace_f2fs_get_victim(sbi->sb, type, gc_type, &p,
-				sbi->cur_victim_sec,
-				prefree_segments(sbi), free_segments(sbi));
+	//if (p.min_segno != NULL_SEGNO)
+	//	trace_f2fs_get_victim(sbi->sb, type, gc_type, &p,
+	//			sbi->cur_victim_sec,
+	//			prefree_segments(sbi), free_segments(sbi));
 	mutex_unlock(&dirty_i->seglist_lock);
 
 	return ret;
@@ -1879,15 +1879,15 @@ int f2fs_gc(struct f2fs_sb_info *sbi, struct f2fs_gc_control *gc_control)
 	};
 	unsigned int skipped_round = 0, round = 0;
 
-	trace_f2fs_gc_begin(sbi->sb, gc_type, gc_control->no_bg_gc,
-				gc_control->nr_free_secs,
-				get_pages(sbi, F2FS_DIRTY_NODES),
-				get_pages(sbi, F2FS_DIRTY_DENTS),
-				get_pages(sbi, F2FS_DIRTY_IMETA),
-				free_sections(sbi),
-				free_segments(sbi),
-				reserved_segments(sbi),
-				prefree_segments(sbi));
+	//trace_f2fs_gc_begin(sbi->sb, gc_type, gc_control->no_bg_gc,
+	//			gc_control->nr_free_secs,
+	//			get_pages(sbi, F2FS_DIRTY_NODES),
+	//			get_pages(sbi, F2FS_DIRTY_DENTS),
+	//			get_pages(sbi, F2FS_DIRTY_IMETA),
+	//			free_sections(sbi),
+	//			free_segments(sbi),
+	//			reserved_segments(sbi),
+	//			prefree_segments(sbi));
 
 	cpc.reason = __get_cp_reason(sbi);
 	sbi->skipped_gc_rwsem = 0;
@@ -1981,14 +1981,14 @@ stop:
 	if (gc_type == FG_GC)
 		f2fs_unpin_all_sections(sbi, true);
 
-	trace_f2fs_gc_end(sbi->sb, ret, total_freed, sec_freed,
-				get_pages(sbi, F2FS_DIRTY_NODES),
-				get_pages(sbi, F2FS_DIRTY_DENTS),
-				get_pages(sbi, F2FS_DIRTY_IMETA),
-				free_sections(sbi),
-				free_segments(sbi),
-				reserved_segments(sbi),
-				prefree_segments(sbi));
+	//trace_f2fs_gc_end(sbi->sb, ret, total_freed, sec_freed,
+	//			get_pages(sbi, F2FS_DIRTY_NODES),
+	//			get_pages(sbi, F2FS_DIRTY_DENTS),
+	//			get_pages(sbi, F2FS_DIRTY_IMETA),
+	//			free_sections(sbi),
+	//			free_segments(sbi),
+	//			reserved_segments(sbi),
+	//			prefree_segments(sbi));
 
 	f2fs_up_write(&sbi->gc_lock);
 

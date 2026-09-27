@@ -261,8 +261,8 @@ retry:
 
 	f2fs_put_dnode(&dn);
 
-	trace_f2fs_replace_atomic_write_block(inode, F2FS_I(inode)->cow_inode,
-			index, old_addr ? *old_addr : 0, new_addr, recover);
+	//trace_f2fs_replace_atomic_write_block(inode, F2FS_I(inode)->cow_inode,
+	//		index, old_addr ? *old_addr : 0, new_addr, recover);
 	return 0;
 }
 
@@ -517,8 +517,8 @@ static int __submit_flush_wait(struct f2fs_sb_info *sbi,
 {
 	int ret = blkdev_issue_flush(bdev, GFP_NOFS, NULL);
 
-	trace_f2fs_issue_flush(bdev, test_opt(sbi, NOBARRIER),
-				test_opt(sbi, FLUSH_MERGE), ret);
+	//trace_f2fs_issue_flush(bdev, test_opt(sbi, NOBARRIER),
+	//			test_opt(sbi, FLUSH_MERGE), ret);
 	return ret;
 }
 
@@ -1079,7 +1079,7 @@ static void __remove_discard_cmd(struct f2fs_sb_info *sbi,
 	struct discard_cmd_control *dcc = SM_I(sbi)->dcc_info;
 	unsigned long flags;
 
-	trace_f2fs_remove_discard(dc->bdev, dc->di.start, dc->di.len);
+	//trace_f2fs_remove_discard(dc->bdev, dc->di.start, dc->di.len);
 
 	spin_lock_irqsave(&dc->lock, flags);
 	if (dc->bio_ref) {
@@ -1214,7 +1214,7 @@ static int __submit_discard_cmd(struct f2fs_sb_info *sbi,
 	if (is_sbi_flag_set(sbi, SBI_NEED_FSCK))
 		return 0;
 
-	trace_f2fs_issue_discard(bdev, dc->di.start, dc->di.len);
+	//trace_f2fs_issue_discard(bdev, dc->di.start, dc->di.len);
 
 	lstart = dc->di.lstart;
 	start = dc->di.start;
@@ -1467,7 +1467,7 @@ static void __queue_discard_cmd(struct f2fs_sb_info *sbi,
 	if (!f2fs_bdev_support_discard(bdev))
 		return;
 
-	trace_f2fs_queue_discard(bdev, blkstart, blklen);
+	//trace_f2fs_queue_discard(bdev, blkstart, blklen);
 
 	if (f2fs_is_multi_device(sbi)) {
 		int devi = f2fs_target_device_index(sbi, blkstart);
@@ -1873,7 +1873,7 @@ static int __f2fs_issue_discard_zone(struct f2fs_sb_info *sbi,
 				 blkstart, blklen);
 			return -EIO;
 		}
-		trace_f2fs_issue_reset_zone(bdev, blkstart);
+		//trace_f2fs_issue_reset_zone(bdev, blkstart);
 		return blkdev_zone_mgmt(bdev, REQ_OP_ZONE_RESET,
 					sector, nr_sects, GFP_NOFS);
 	}

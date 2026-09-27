@@ -579,7 +579,7 @@ static u64 update_triggers(struct psi_group *group, u64 now)
 		if (now < t->last_event_time + t->win.size)
 			continue;
 
-		trace_psi_event(t->state, t->threshold);
+		//trace_psi_event(t->state, t->threshold);
 
 		/* Generate an event */
 		if (cmpxchg(&t->event, 0, 1) == 0)
@@ -587,7 +587,7 @@ static u64 update_triggers(struct psi_group *group, u64 now)
 		t->last_event_time = now;
 	}
 
-	trace_event_helper(group);
+	//trace_event_helper(group);
 	if (new_stall)
 		memcpy(group->polling_total, total,
 				sizeof(group->polling_total));

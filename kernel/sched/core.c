@@ -1445,9 +1445,9 @@ static inline void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 	uclamp_rq_inc(rq, p);
 	p->sched_class->enqueue_task(rq, p, flags);
 	walt_update_last_enqueue(p);
-	trace_sched_enq_deq_task(p, 1, cpumask_bits(&p->cpus_mask)[0]);
+	//trace_sched_enq_deq_task(p, 1, cpumask_bits(&p->cpus_mask)[0]);
 
-	trace_android_rvh_enqueue_task(rq, p);
+	//trace_android_rvh_enqueue_task(rq, p);
 }
 
 static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
@@ -1466,9 +1466,9 @@ static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 	if (p == rq->wrq.ed_task)
 		early_detection_notify(rq, sched_ktime_clock());
 #endif
-	trace_sched_enq_deq_task(p, 0, cpumask_bits(&p->cpus_mask)[0]);
+	//trace_sched_enq_deq_task(p, 0, cpumask_bits(&p->cpus_mask)[0]);
 
-	trace_android_rvh_dequeue_task(rq, p);
+	//trace_android_rvh_dequeue_task(rq, p);
 }
 
 void activate_task(struct rq *rq, struct task_struct *p, int flags)
@@ -1933,7 +1933,7 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 	WARN_ON_ONCE(!cpu_online(new_cpu));
 #endif
 
-	trace_sched_migrate_task(p, new_cpu);
+	//trace_sched_migrate_task(p, new_cpu);
 
 	if (task_cpu(p) != new_cpu) {
 		if (p->sched_class->migrate_task_rq)
@@ -2056,7 +2056,7 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
 	if (!cpumask_test_cpu(arg.src_cpu, arg.dst_task->cpus_ptr))
 		goto out;
 
-	trace_sched_swap_numa(cur, arg.src_cpu, p, arg.dst_cpu);
+	//trace_sched_swap_numa(cur, arg.src_cpu, p, arg.dst_cpu);
 	ret = stop_two_cpus(arg.dst_cpu, arg.src_cpu, migrate_swap_stop, &arg);
 
 out:
@@ -2118,7 +2118,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * just go back and repeat.
 		 */
 		rq = task_rq_lock(p, &rf);
-		trace_sched_wait_task(p);
+		//trace_sched_wait_task(p);
 		running = task_running(rq, p);
 		queued = task_on_rq_queued(p);
 		ncsw = 0;
@@ -2228,7 +2228,7 @@ static int select_fallback_rq(int cpu, struct task_struct *p, bool allow_iso)
 	int isolated_candidate = -1;
 #endif
 
-	trace_android_rvh_select_fallback_rq(cpu, p, &dest_cpu);
+	//trace_android_rvh_select_fallback_rq(cpu, p, &dest_cpu);
 	if (dest_cpu >= 0)
 		return dest_cpu;
 
@@ -2450,7 +2450,7 @@ static void ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags,
 {
 	check_preempt_curr(rq, p, wake_flags);
 	p->state = TASK_RUNNING;
-	trace_sched_wakeup(p);
+	//trace_sched_wakeup(p);
 
 #ifdef CONFIG_SMP
 	if (p->sched_class->task_woken) {
@@ -2617,8 +2617,8 @@ static void __ttwu_queue_wakelist(struct task_struct *p, int cpu, int wake_flags
 	if (llist_add(&p->wake_entry, &cpu_rq(cpu)->wake_list)) {
 		if (!set_nr_if_polling(rq->idle))
 			smp_send_reschedule(cpu);
-		else
-			trace_sched_wake_idle_without_ipi(cpu);
+		//else
+		//	trace_sched_wake_idle_without_ipi(cpu);
 	}
 }
 
@@ -2632,15 +2632,15 @@ void wake_up_if_idle(int cpu)
 	if (!is_idle_task(rcu_dereference(rq->curr)))
 		goto out;
 
-	if (set_nr_if_polling(rq->idle)) {
-		trace_sched_wake_idle_without_ipi(cpu);
-	} else {
+	//if (!set_nr_if_polling(rq->idle)) {
+	//	trace_sched_wake_idle_without_ipi(cpu);
+	//} else {
 		rq_lock_irqsave(rq, &rf);
 		if (is_idle_task(rq->curr))
 			smp_send_reschedule(cpu);
 		/* Else CPU is not idle, do nothing here: */
 		rq_unlock_irqrestore(rq, &rf);
-	}
+	//}
 
 out:
 	rcu_read_unlock();
@@ -2835,9 +2835,9 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 			goto out;
 
 		success = 1;
-		trace_sched_waking(p);
+		//trace_sched_waking(p);
 		p->state = TASK_RUNNING;
-		trace_sched_wakeup(p);
+		//trace_sched_wakeup(p);
 		goto out;
 	}
 
@@ -2852,7 +2852,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 	if (!(p->state & state))
 		goto unlock;
 
-	trace_sched_waking(p);
+	//trace_sched_waking(p);
 
 	/* We're going to change ->state: */
 	success = 1;
@@ -3279,7 +3279,7 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	 * Make sure we do not leak PI boosting priority to the child.
 	 */
 	p->prio = current->normal_prio;
-	trace_android_rvh_prepare_prio_fork(p);
+	//trace_android_rvh_prepare_prio_fork(p);
 
 	uclamp_fork(p);
 
@@ -3312,7 +3312,7 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 		p->sched_class = &fair_sched_class;
 
 	init_entity_runnable_average(&p->se);
-	trace_android_rvh_finish_prio_fork(p);
+	//trace_android_rvh_finish_prio_fork(p);
 
 	/*
 	 * The child is not yet in the pid-hash so no cgroup attach races,
@@ -3398,7 +3398,7 @@ void wake_up_new_task(struct task_struct *p)
 
 	mark_task_starting(p);
 	activate_task(rq, p, ENQUEUE_NOCLOCK);
-	trace_sched_wakeup_new(p);
+	//trace_sched_wakeup_new(p);
 	check_preempt_curr(rq, p, WF_FORK);
 #ifdef CONFIG_SMP
 	if (p->sched_class->task_woken) {
@@ -4086,7 +4086,7 @@ void scheduler_tick(void)
 	rq_unlock(rq, &rf);
 #endif
 
-	trace_android_vh_scheduler_tick(rq);
+	//trace_android_vh_scheduler_tick(rq);
 }
 
 #ifdef CONFIG_NO_HZ_FULL
@@ -4245,7 +4245,7 @@ static inline void preempt_latency_start(int val)
 #ifdef CONFIG_DEBUG_PREEMPT
 		current->preempt_disable_ip = ip;
 #endif
-		trace_preempt_off(CALLER_ADDR0, ip);
+		//trace_preempt_off(CALLER_ADDR0, ip);
 	}
 }
 
@@ -4277,8 +4277,8 @@ NOKPROBE_SYMBOL(preempt_count_add);
  */
 static inline void preempt_latency_stop(int val)
 {
-	if (preempt_count() == val)
-		trace_preempt_on(CALLER_ADDR0, get_lock_parent_ip());
+	//if (preempt_count() == val)
+	//	trace_preempt_on(CALLER_ADDR0, get_lock_parent_ip());
 }
 
 void preempt_count_sub(int val)
@@ -4599,7 +4599,7 @@ static void __sched notrace __schedule(bool preempt)
 		 */
 		++*switch_count;
 
-		trace_sched_switch(preempt, prev, next);
+		//trace_sched_switch(preempt, prev, next);
 
 		/* Also unlocks the rq: */
 		rq = context_switch(rq, prev, next, &rf);
@@ -4905,7 +4905,7 @@ void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
 	struct rq_flags rf;
 	struct rq *rq;
 
-	trace_android_rvh_rtmutex_prepare_setprio(p, pi_task);
+	//trace_android_rvh_rtmutex_prepare_setprio(p, pi_task);
 	/* XXX used to be waiter->prio, not waiter->task->prio */
 	prio = __rt_effective_prio(pi_task, p->normal_prio);
 
@@ -4953,7 +4953,7 @@ void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
 		goto out_unlock;
 	}
 
-	trace_sched_pi_setprio(p, pi_task);
+	//trace_sched_pi_setprio(p, pi_task);
 	oldprio = p->prio;
 
 	if (oldprio == prio)
@@ -5029,7 +5029,7 @@ void set_user_nice(struct task_struct *p, long nice)
 	struct rq_flags rf;
 	struct rq *rq;
 
-	trace_android_rvh_set_user_nice(p, &nice, &allowed);
+	//trace_android_rvh_set_user_nice(p, &nice, &allowed);
 	if ((task_nice(p) == nice || nice < MIN_NICE || nice > MAX_NICE) && !allowed)
 		return;
 	/*
@@ -5262,7 +5262,7 @@ static void __setscheduler(struct rq *rq, struct task_struct *p,
 	else
 		p->sched_class = &fair_sched_class;
 
-	trace_android_rvh_setscheduler(p);
+	//trace_android_rvh_setscheduler(p);
 }
 
 /*
@@ -6572,7 +6572,7 @@ void sched_show_task(struct task_struct *p)
 		(unsigned long)task_thread_info(p)->flags);
 
 	print_worker_info(KERN_INFO, p);
-	trace_android_vh_sched_show_task(p);
+	//trace_android_vh_sched_show_task(p);
 	show_stack(p, NULL);
 	put_task_stack(p);
 }
@@ -6768,7 +6768,7 @@ int migrate_task_to(struct task_struct *p, int target_cpu)
 
 	/* TODO: This is not properly updating schedstats */
 
-	trace_sched_move_numa(p, curr_cpu, target_cpu);
+	//trace_sched_move_numa(p, curr_cpu, target_cpu);
 	return stop_one_cpu(curr_cpu, migration_cpu_stop, &arg);
 }
 

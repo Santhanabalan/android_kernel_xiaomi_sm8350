@@ -361,7 +361,7 @@ static void store_temperature(struct thermal_zone_device *tz, int temp)
 	tz->temperature = temp;
 	mutex_unlock(&tz->lock);
 
-	trace_thermal_temperature(tz);
+	//trace_thermal_temperature(tz);
 	if (tz->last_temperature == THERMAL_TEMP_INVALID)
 		dev_dbg(&tz->device, "last_temperature N/A, current_temperature=%d\n",
 			tz->temperature);
@@ -394,7 +394,7 @@ void thermal_zone_device_update_temp(struct thermal_zone_device *tz,
 
 	if (atomic_read(&in_suspend) && tz->polling_delay)
 		return;
-	trace_thermal_device_update(tz, event);
+	//trace_thermal_device_update(tz, event);
 	store_temperature(tz, temp);
 
 	thermal_zone_set_trips(tz);
@@ -452,7 +452,7 @@ static void update_temperature(struct thermal_zone_device *tz)
 	tz->temperature = temp;
 	mutex_unlock(&tz->lock);
 
-	trace_thermal_temperature(tz);
+	//trace_thermal_temperature(tz);
 	if (tz->last_temperature == THERMAL_TEMP_INVALID)
 		dev_dbg(&tz->device, "last_temperature N/A, current_temperature=%d\n",
 			tz->temperature);
@@ -528,7 +528,7 @@ static void handle_critical_trips(struct thermal_zone_device *tz,
 		return;
 
 #ifdef CONFIG_QTI_THERMAL
-	trace_thermal_zone_trip(tz, trip, trip_type, true);
+	//trace_thermal_zone_trip(tz, trip, trip_type, true);
 #endif
 
 	if (tz->ops->notify)
@@ -572,7 +572,7 @@ static void handle_thermal_trip(struct thermal_zone_device *tz, int trip)
 	 */
 	monitor_thermal_zone(tz);
 #ifdef CONFIG_QTI_THERMAL
-	trace_thermal_handle_trip(tz, trip);
+	//trace_thermal_handle_trip(tz, trip);
 #endif
 }
 
@@ -602,7 +602,7 @@ void thermal_zone_device_update(struct thermal_zone_device *tz,
 #ifdef CONFIG_QTI_THERMAL
 	if (atomic_read(&in_suspend) && tz->polling_delay)
 		return;
-	trace_thermal_device_update(tz, event);
+	//trace_thermal_device_update(tz, event);
 #else
 	if (atomic_read(&in_suspend))
 		return;

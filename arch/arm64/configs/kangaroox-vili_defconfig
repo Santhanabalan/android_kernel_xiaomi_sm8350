@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.4.249 Kernel Configuration
+# Linux/arm64 5.4.302 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="WeebX clang version 17.0.0 (https://github.com/llvm/llvm-project b5fa9af4ae4955289693ce4076871cd0c92d5684)"
 CONFIG_GCC_VERSION=0
@@ -376,6 +376,7 @@ CONFIG_ARM64_ERRATUM_1024718=y
 # CONFIG_ARM64_ERRATUM_1286807 is not set
 # CONFIG_ARM64_ERRATUM_1463225 is not set
 # CONFIG_ARM64_ERRATUM_1542419 is not set
+CONFIG_ARM64_ERRATUM_3194386=y
 # CONFIG_CAVIUM_ERRATUM_22375 is not set
 # CONFIG_CAVIUM_ERRATUM_23154 is not set
 # CONFIG_CAVIUM_ERRATUM_27456 is not set
@@ -1324,7 +1325,6 @@ CONFIG_NET_SCHED=y
 #
 # Queueing/Scheduling
 #
-# CONFIG_NET_SCH_CBQ is not set
 CONFIG_NET_SCH_HTB=y
 # CONFIG_NET_SCH_HFSC is not set
 CONFIG_NET_SCH_PRIO=y
@@ -1338,7 +1338,6 @@ CONFIG_NET_SCH_PRIO=y
 # CONFIG_NET_SCH_ETF is not set
 # CONFIG_NET_SCH_TAPRIO is not set
 # CONFIG_NET_SCH_GRED is not set
-# CONFIG_NET_SCH_DSMARK is not set
 # CONFIG_NET_SCH_NETEM is not set
 # CONFIG_NET_SCH_DRR is not set
 # CONFIG_NET_SCH_MQPRIO is not set
@@ -1368,8 +1367,6 @@ CONFIG_NET_CLS_FW=y
 CONFIG_NET_CLS_U32=y
 # CONFIG_CLS_U32_PERF is not set
 # CONFIG_CLS_U32_MARK is not set
-# CONFIG_NET_CLS_RSVP is not set
-# CONFIG_NET_CLS_RSVP6 is not set
 # CONFIG_NET_CLS_FLOW is not set
 # CONFIG_NET_CLS_CGROUP is not set
 CONFIG_NET_CLS_BPF=y
@@ -1711,7 +1708,6 @@ CONFIG_BLK_DEV_LOOP_MIN_COUNT=16
 # CONFIG_BLK_DEV_DRBD is not set
 # CONFIG_BLK_DEV_NBD is not set
 # CONFIG_BLK_DEV_SKD is not set
-# CONFIG_BLK_DEV_SX8 is not set
 CONFIG_BLK_DEV_RAM=y
 CONFIG_BLK_DEV_RAM_COUNT=16
 CONFIG_BLK_DEV_RAM_SIZE=8192
@@ -3140,7 +3136,6 @@ CONFIG_MFD_SPMI_PMIC=y
 # CONFIG_ABX500_CORE is not set
 # CONFIG_MFD_STMPE is not set
 CONFIG_MFD_SYSCON=y
-# CONFIG_MFD_TI_AM335X_TSCADC is not set
 # CONFIG_MFD_LP3943 is not set
 # CONFIG_MFD_LP8788 is not set
 # CONFIG_MFD_TI_LMU is not set
@@ -4930,8 +4925,10 @@ CONFIG_MSM_GENI_SE=y
 # CONFIG_IOSS is not set
 # CONFIG_R8125 is not set
 # CONFIG_R8168 is not set
+# CONFIG_USB_R8152_RTL is not set
 # end of Qualcomm technologies inc. MSM specific device drivers
 
+CONFIG_SURFACE_PLATFORMS=y
 CONFIG_CLKDEV_LOOKUP=y
 CONFIG_HAVE_CLK_PREPARE=y
 CONFIG_COMMON_CLK=y
@@ -5455,6 +5452,11 @@ CONFIG_QCOM_SPMI_ADC5=y
 # CONFIG_VF610_ADC is not set
 # CONFIG_XILINX_XADC is not set
 # end of Analog to digital converters
+
+#
+# Analog to digital and digital to analog converters
+#
+# end of Analog to digital and digital to analog converters
 
 #
 # Analog Front Ends
@@ -6139,6 +6141,9 @@ CONFIG_KEYS_COMPAT=y
 # CONFIG_ENCRYPTED_KEYS is not set
 # CONFIG_KEY_DH_OPERATIONS is not set
 # CONFIG_SECURITY_DMESG_RESTRICT is not set
+CONFIG_PROC_MEM_ALWAYS_FORCE=y
+# CONFIG_PROC_MEM_FORCE_PTRACE is not set
+# CONFIG_PROC_MEM_NO_FORCE is not set
 CONFIG_SECURITY=y
 CONFIG_SECURITYFS=y
 CONFIG_SECURITY_NETWORK=y
